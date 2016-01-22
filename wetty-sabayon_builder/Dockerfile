@@ -11,6 +11,8 @@ RUN echo 3 | equo i gcc gcc-base
 RUN echo 3 | equo i sudo
 RUN sed -i '/pam_limits.so/ s/^#*/#/' /etc/pam.d/system-auth
 RUN echo "%wheel ALL=(ALL) ALL" >>  /etc/sudoers
+RUN cp -rfv /builder /usr/sbin/builder;chmod +x /usr/sbin/builder
+ADD motd /etc/motd
 RUN git clone https://github.com/krishnasrinivas/wetty.git /app
 WORKDIR /app
 RUN npm install
