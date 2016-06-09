@@ -1,4 +1,8 @@
-# Observium
+# Dockerfiles
+
+Yet another stack of Dockerfiles!
+
+## Observium
 
 	NAME="observium"
 	DIR="/somewhere/observium"
@@ -21,4 +25,12 @@
 	    -p 514:514/tcp \
 	    --name $NAME \
 	    observium/latest
+
+## Lounge
+
+	./lounge.sh
+	
+## wetty-*
+
+Docker images definitions to run sabayon on docker thru web interface
 
