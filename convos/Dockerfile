@@ -15,7 +15,7 @@ RUN equo i net-misc/curl dev-lang/perl dev-perl/Unicode-UTF8 dev-perl/Crypt-SSLe
 RUN cd / && curl https://convos.by/install.sh | sh -
   
 
-ENTRYPOINT ["/convos/script/convos daemon"]
+ENTRYPOINT ["/convos/script/convos", "daemon"]
 
 VOLUME ["/convos-data"]
 
