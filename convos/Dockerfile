@@ -1,14 +1,13 @@
 FROM sabayon/base-amd64
 
+# Define custom Convos home
 ENV CONVOS_HOME /convos-data
 
-# Installing required software
+# Accepting all licenses when running equo commands
 ENV ACCEPT_LICENSE=*
 
-RUN equo up 
-# convos deps
-
-RUN equo i net-misc/curl dev-lang/perl dev-perl/Unicode-UTF8 dev-perl/Crypt-SSLeay dev-perl/Crypt-Eksblowfish
+# Installing Convos dependencies
+RUN equo up && equo i net-misc/curl dev-lang/perl dev-perl/Unicode-UTF8 dev-perl/Crypt-SSLeay dev-perl/Crypt-Eksblowfish
 
 # install convos
 
