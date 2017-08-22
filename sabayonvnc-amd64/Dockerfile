@@ -14,7 +14,7 @@ RUN equo up \
     && equo cleanup
 
 ADD web /web/
-RUN pip install -r /web/requirements.txt
+RUN pip install --user -r /web/requirements.txt
 
 ADD noVNC /noVNC/
 ADD nginx.conf.default /etc/nginx/nginx.conf
