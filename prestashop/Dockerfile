@@ -2,7 +2,7 @@ FROM prestashop/prestashop:1.6.1.7
 
 WORKDIR /
 
-RUN apt-get update && apt-get install -y unzip build-essential apache2-threaded-dev
+RUN apt-get update && apt-get install -y unzip build-essential apache2-dev
 
 RUN wget https://github.com/gnif/mod_rpaf/archive/stable.zip && unzip stable.zip && cd mod_rpaf-stable && make && make install
 
