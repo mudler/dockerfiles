@@ -30,7 +30,7 @@ RUN pecl install mongodb && pecl install base58-0.1.3 && pecl install yaml && do
 RUN apt-get install -y wget libsodium-dev
 
 RUN mkdir -p /app && rm -fr /var/www/html && ln -s /app /var/www/html
-RUN cd /app && wget -qO- -O temp.zip https://github.com/devcode-it/openstamanager/releases/download/v2.4.25/openstamanager-2.4.25.zip && unzip temp.zip && rm temp.zip && chmod 777 -R ./
+RUN cd /app && wget -qO- -O temp.zip https://github.com/devcode-it/openstamanager/releases/download/v2.4.30/openstamanager-2.4.30.zip && unzip temp.zip && rm temp.zip && chmod 777 -R ./
 #ADD sample/ /app
 ADD php.ini /usr/local/etc/php/php.ini
 
