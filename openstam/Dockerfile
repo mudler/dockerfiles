@@ -1,6 +1,6 @@
-FROM php:7.4-apache
+FROM php:8.1-apache
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-cache search libbase && apt-get install -y \
         libssl-dev \
         libfreetype6-dev \
         libjpeg62-turbo-dev \
@@ -11,7 +11,6 @@ RUN apt-get update && apt-get install -y \
 	    libzip-dev \
         libicu-dev \
         g++ \
-        libbase58-dev \
         libyaml-dev \
         unzip \
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
@@ -25,7 +24,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install intl gettext zip bcmath
 
 RUN a2enmod rewrite
-RUN pecl install mongodb && pecl install base58-0.1.3 && pecl install yaml && docker-php-ext-enable mongodb base58 yaml
+RUN pecl install mongodb && pecl install yaml && docker-php-ext-enable mongodb yaml
 
 RUN apt-get install -y wget libsodium-dev
 
