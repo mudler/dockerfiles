@@ -5,6 +5,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Update and install dependencies
 RUN apt-get update && apt-get install -y \
+    vim && \
+    tmux && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install docker
+RUN apt-get update && apt-get install -y \
     ca-certificates \
     curl \
     gnupg \
