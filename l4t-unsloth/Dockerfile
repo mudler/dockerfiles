@@ -17,5 +17,7 @@ RUN python3 -m pip install --upgrade pip && python3 -m pip install numpy 'Cython
 RUN pip install packaging xformers==0.0.27
 
 ## Install unsloth
+RUN pip install "bitsandbytes @ git+https://github.com/bitsandbytes-foundation/bitsandbytes.git"
+
 RUN pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
-RUN pip install --no-deps trl peft accelerate bitsandbytes
+RUN pip install --no-deps trl peft accelerate
