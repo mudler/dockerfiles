@@ -19,5 +19,5 @@ RUN pip install packaging xformers==0.0.27
 ## Install unsloth
 RUN pip install "bitsandbytes @ git+https://github.com/bitsandbytes-foundation/bitsandbytes.git"
 
-RUN pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
+RUN pip install "unsloth[cu123-torch230] @ git+https://github.com/unslothai/unsloth.git"
 RUN pip install --no-deps trl peft accelerate
