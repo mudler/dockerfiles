@@ -16,7 +16,8 @@ RUN python3 -m pip install --upgrade pip && python3 -m pip install numpy 'Cython
 
 RUN apt-get install -y llvm-15
 RUN git clone https://github.com/triton-lang/triton.git && \
-        cd triton/python && \
+        cd triton && git checkout cf34004b8a67d290a962da166f5aa2fc66751326 && \
+        cd python && \
         pip install ninja cmake wheel && \
         pip install -e .
 
