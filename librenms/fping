@@ -1,2 +1,0 @@
-#!/bin/bash
-/usr/bin/paping -c 4 --nocolor -p 80 ${@: -1}
