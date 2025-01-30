@@ -14,7 +14,11 @@ RUN wget https://nvidia.box.com/shared/static/zvultzsmd4iuheykxy17s4l2n91ylpl8.w
 
 RUN python3 -m pip install --upgrade pip && python3 -m pip install numpy 'Cython<3' && python3 -m pip install --no-cache torch-2.3.0-cp310-cp310-linux_aarch64.whl torchaudio-2.3.0+952ea74-cp310-cp310-linux_aarch64.whl torchvision-0.18.0a0+6043bc2-cp310-cp310-linux_aarch64.whl
 
-RUN pip install triton
+RUN git clone https://github.com/triton-lang/triton.git && \
+        cd triton/python && \
+        pip install ninja cmake wheel && \
+        pip install -e .
+
 RUN pip install packaging xformers==0.0.27
 
 ## Install unsloth
