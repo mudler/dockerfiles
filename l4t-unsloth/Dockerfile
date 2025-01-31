@@ -3,6 +3,8 @@
 # nvcr.io/nvidia/l4t-cuda:12.6.11-runtime
 # https://forums.developer.nvidia.com/t/help-with-pytorch-torchvision-on-jetpack-6/284871/2
 # https://github.com/dusty-nv/jetson-containers
+
+## docker run -ti --runtime nvidia --gpus all --rm -v /usr/local/hf:/root/.cache/huggingface/hub
 FROM nvcr.io/nvidia/l4t-jetpack:r36.4.0
 
 RUN apt-get update && apt-get install -y git python3-pip libopenblas-dev libopenblas-base libopenmpi-dev libomp-dev libcudnn9-cuda-12
@@ -26,8 +28,10 @@ RUN git clone https://github.com/bitsandbytes-foundation/bitsandbytes.git && cd 
     make && \
     pip install -e . && CUDA_VERSION=126 python setup.py install && /bin/bash -c "cp -rfv bitsandbytes/*.so /usr/local/lib/python3.10/dist-packages/*/bitsandbytes/"
 
-RUN pip install packaging xformers==0.0.27
-
+RUN pip install packaging # xformers==0.0.27
+# https://developer.nvidia.com/cuda-gpus
+# https://github.com/facebookresearch/xformers/issues/472
+RUN TORCH_CUDA_ARCH_LIST="8.7" pip install -v -U git+https://github.com/facebookresearch/xformers.git@v0.0.27#egg=xformers
 # Install unsloth
 RUN pip install "unsloth[cu123-torch230] @ git+https://github.com/unslothai/unsloth.git"
 RUN pip install "unsloth_zoo @ git+https://github.com/unslothai/unsloth-zoo.git"
