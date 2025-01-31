@@ -28,7 +28,8 @@ RUN git clone https://github.com/bitsandbytes-foundation/bitsandbytes.git && cd 
     make && \
     pip install -e . && CUDA_VERSION=126 python setup.py install && /bin/bash -c "cp -rfv bitsandbytes/*.so /usr/local/lib/python3.10/dist-packages/*/bitsandbytes/"
 
-RUN pip install packaging # xformers==0.0.27
+RUN pip install packaging 
+# xformers==0.0.27
 # https://developer.nvidia.com/cuda-gpus
 # https://github.com/facebookresearch/xformers/issues/472
 RUN TORCH_CUDA_ARCH_LIST="8.7" pip install -v -U git+https://github.com/facebookresearch/xformers.git@v0.0.27#egg=xformers
