@@ -26,7 +26,7 @@ RUN git clone https://github.com/bitsandbytes-foundation/bitsandbytes.git && cd 
     make && \
     pip install -e . && CUDA_VERSION=126 python setup.py install
 
-RUN pip install unsloth_zoo packaging xformers==0.0.27
+RUN pip install packaging xformers==0.0.27
 
 # Install unsloth
 RUN pip install "unsloth[cu123-torch230] @ git+https://github.com/unslothai/unsloth.git"
