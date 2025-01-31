@@ -24,10 +24,14 @@ RUN git clone https://github.com/triton-lang/triton.git && \
 RUN git clone https://github.com/bitsandbytes-foundation/bitsandbytes.git && cd bitsandbytes/ && \
     cmake -DCOMPUTE_BACKEND=cuda -S . && \
     make && \
-    pip install -e .
+    pip install -e . && CUDA_VERSION=126 python setup.py install
 
 RUN pip install unsloth_zoo packaging xformers==0.0.27
 
 # Install unsloth
 RUN pip install "unsloth[cu123-torch230] @ git+https://github.com/unslothai/unsloth.git"
 RUN pip install --no-deps trl peft accelerate
+
+ENV BNB_CUDA_VERSION=126
+
+WORKDIR /triton
