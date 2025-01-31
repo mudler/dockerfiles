@@ -1,9 +1,5 @@
 FROM quay.io/kairos/ubuntu:22.04-core-arm64-nvidia-jetson-agx-orin-master
 
-
-RUN find /usr/lib/firmware -type f -name "*.zst" -execdir unzstd --rm {} \;
-RUN find /usr/lib/modules -type f -name "*.ko.zst" -execdir unzstd --rm {} \+
-
 # Set environment variables for non-interactive installations
 ENV DEBIAN_FRONTEND=noninteractive
 
