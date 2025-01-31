@@ -24,7 +24,7 @@ RUN git clone https://github.com/triton-lang/triton.git && \
 RUN git clone https://github.com/bitsandbytes-foundation/bitsandbytes.git && cd bitsandbytes/ && \
     cmake -DCOMPUTE_BACKEND=cuda -S . && \
     make && \
-    pip install -e . && CUDA_VERSION=126 python setup.py install
+    pip install -e . && CUDA_VERSION=126 python setup.py install && /bin/bash -c "cp -rfv bitsandbytes/*.so /usr/local/lib/python3.10/dist-packages/*/bitsandbytes/"
 
 RUN pip install packaging xformers==0.0.27
 
