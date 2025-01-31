@@ -19,7 +19,7 @@ RUN git clone https://github.com/triton-lang/triton.git && \
         cd triton && git checkout cf34004b8a67d290a962da166f5aa2fc66751326 && \
         cd python && \
         pip install ninja cmake wheel pybind11 && \
-        pip install -e .
+        pip install -e . && python setup.py install
 
 RUN git clone https://github.com/bitsandbytes-foundation/bitsandbytes.git && cd bitsandbytes/ && \
     cmake -DCOMPUTE_BACKEND=cuda -S . && \
@@ -36,4 +36,4 @@ RUN pip install --no-deps trl peft accelerate
 
 ENV BNB_CUDA_VERSION=126
 
-WORKDIR /triton
+#WORKDIR /triton
