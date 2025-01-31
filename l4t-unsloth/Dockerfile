@@ -12,7 +12,7 @@ RUN wget https://nvidia.box.com/shared/static/zvultzsmd4iuheykxy17s4l2n91ylpl8.w
  wget https://nvidia.box.com/shared/static/9si945yrzesspmg9up4ys380lqxjylc3.whl -O torchaudio-2.3.0+952ea74-cp310-cp310-linux_aarch64.whl && \
  wget https://nvidia.box.com/shared/static/u0ziu01c0kyji4zz3gxam79181nebylf.whl -O torchvision-0.18.0a0+6043bc2-cp310-cp310-linux_aarch64.whl
 
-RUN python3 -m pip install --upgrade pip && python3 -m pip install numpy==2.2.2 'Cython<3' && python3 -m pip install --no-cache torch-2.3.0-cp310-cp310-linux_aarch64.whl torchaudio-2.3.0+952ea74-cp310-cp310-linux_aarch64.whl torchvision-0.18.0a0+6043bc2-cp310-cp310-linux_aarch64.whl
+RUN python3 -m pip install --upgrade pip && python3 -m pip install numpy 'Cython<3' && python3 -m pip install --no-cache torch-2.3.0-cp310-cp310-linux_aarch64.whl torchaudio-2.3.0+952ea74-cp310-cp310-linux_aarch64.whl torchvision-0.18.0a0+6043bc2-cp310-cp310-linux_aarch64.whl
 
 RUN apt-get install -y llvm-15
 RUN git clone https://github.com/triton-lang/triton.git && \
@@ -32,7 +32,7 @@ RUN pip install packaging xformers==0.0.27
 RUN pip install "unsloth[cu123-torch230] @ git+https://github.com/unslothai/unsloth.git"
 RUN pip install "unsloth_zoo @ git+https://github.com/unslothai/unsloth-zoo.git"
 
-RUN pip install --no-deps trl peft accelerate
+RUN pip install --no-deps trl peft accelerate "numpy<2"
 
 ENV BNB_CUDA_VERSION=126
 
