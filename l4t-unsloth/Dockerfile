@@ -33,7 +33,7 @@ RUN pip install packaging
 # https://developer.nvidia.com/cuda-gpus
 # https://github.com/facebookresearch/xformers/issues/472
 # https://github.com/facebookresearch/xformers/issues/691#issuecomment-1726721633
-RUN MAX_JOBS=1 TORCH_CUDA_ARCH_LIST="8.7" pip install -v -U git+https://github.com/facebookresearch/xformers.git@v0.0.27#egg=xformers
+RUN MAX_JOBS=1 TORCH_CUDA_ARCH_LIST="8.7" pip install -v -U git+https://github.com/facebookresearch/xformers.git@v0.0.26.post1#egg=xformers
 # Install unsloth
 RUN pip install "unsloth[cu123-torch230] @ git+https://github.com/unslothai/unsloth.git"
 RUN pip install "unsloth_zoo @ git+https://github.com/unslothai/unsloth-zoo.git"
