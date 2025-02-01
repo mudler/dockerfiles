@@ -39,4 +39,4 @@ RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearm
 
 COPY custom_bind_mounts.yaml /system/oem/custom_bind_mounts.yaml
 
-RUN pip3 install -U jetson-stats
+RUN apt-get update && apt-get install -y git python3-pip && python3 -m pip install --upgrade pip && python3 -m pip install jetson-stats
