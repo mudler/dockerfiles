@@ -38,3 +38,5 @@ RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearm
      tee /etc/apt/sources.list.d/nvidia-container-toolkit.list && apt-get update && apt-get install -y nvidia-container-toolkit && nvidia-ctk runtime configure --runtime=docker && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY custom_bind_mounts.yaml /system/oem/custom_bind_mounts.yaml
+
+RUN pip3 install -U jetson-stats
