@@ -5,6 +5,7 @@
       push:
         branches:
           - master
+          - test
         tags:
           - '*'
     concurrency:
