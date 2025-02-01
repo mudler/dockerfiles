@@ -9,7 +9,7 @@ FROM nvcr.io/nvidia/l4t-jetpack:r36.4.0
 
 RUN apt-get update && apt-get install -y git python3-pip libopenblas-dev libopenblas-base libopenmpi-dev libomp-dev libcudnn9-cuda-12
 
-RUN python3 -m pip install --upgrade pip && python3 -m pip install packaging numpy<2 'Cython<3' && python -m pip install --index-url https://pypi.jetson-ai-lab.dev/jp6/cu126/ xformers triton bitsandbytes torchaudio torchvision
+RUN python3 -m pip install --upgrade pip && python3 -m pip install packaging 'numpy<2' 'Cython<3' && python -m pip install --index-url https://pypi.jetson-ai-lab.dev/jp6/cu126/ xformers triton bitsandbytes torchaudio torchvision
 
 RUN pip install packaging 
 
