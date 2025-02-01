@@ -6,6 +6,7 @@
         branches:
           - master
           - test
+          - test-2
         tags:
           - '*'
     concurrency:
