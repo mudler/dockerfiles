@@ -39,11 +39,20 @@ The image is a ready to use image for fine-tuning models which works with Nvidia
 - `torchvision` (2.5)
 - `torchaudio` (0.20) 
 - `xformers` (current)
+- `jupyterlab`
 
-The image is ready to use with the following command:
+The image is ready to use with the following command to run a console:
 
 ```bash
-docker run -ti --runtime nvidia --gpus all --rm -v $PWD/huggingface_cache:/root/.cache/huggingface/hub quay.io/mudler/nvidia-l4t-unsloth:latest
+docker run -ti --runtime nvidia --entrypoint /bin/bash --gpus all --rm -v $PWD/huggingface_cache:/root/.cache/huggingface/hub quay.io/mudler/nvidia-l4t-unsloth:latest
 ```
 
 You can find training examples in `/work/examples`.
+
+To start it with jupyter lab:
+
+```bash
+docker run -ti --runtime nvidia -p 9090:9090 --gpus all --rm -v $PWD/huggingface_cache:/root/.cache/huggingface/hub quay.io/mudler/nvidia-l4t-unsloth:latest
+```
+
+It automatically starts jupyter lab, you can access it by opening the browser and going to `http://localhost:9090`.

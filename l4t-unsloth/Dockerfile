@@ -17,6 +17,9 @@ RUN pip install "unsloth_zoo @ git+https://github.com/unslothai/unsloth-zoo.git"
 
 RUN pip install --no-deps trl peft accelerate "numpy<2"
 
+## Install jupyerlab
+RUN pip install jupyterlab
+
 ENV BNB_CUDA_VERSION=126
 
 RUN mkdir -p /work
@@ -25,3 +28,8 @@ COPY examples/ /work/examples
 
 WORKDIR /work
 
+VOLUME ["/work"]
+# Set jupyter lab as entrypoint
+EXPOSE 9090
+
+CMD ["jupyter", "lab", "--allow-root", "--no-browser", "--port", "9090" , "--ip", "0.0.0.0", "--notebook-dir","/work"]
