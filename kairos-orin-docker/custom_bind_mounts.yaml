@@ -1,0 +1,8 @@
+#cloud-config
+
+stages:
+  rootfs:
+  - name: "user_custom_mount"
+    environment_file: "/run/cos/custom-layout.env"
+    environment:
+       CUSTOM_BIND_MOUNTS: "/var/lib/docker"

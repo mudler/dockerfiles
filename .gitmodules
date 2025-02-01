@@ -1,3 +1,0 @@
-[submodule "docker-mailserver"]
-	path = docker-mailserver
-	url = https://github.com/tomav/docker-mailserver
