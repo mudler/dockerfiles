@@ -4,36 +4,15 @@
 # https://forums.developer.nvidia.com/t/help-with-pytorch-torchvision-on-jetpack-6/284871/2
 # https://github.com/dusty-nv/jetson-containers
 
-## docker run -ti --runtime nvidia --gpus all --rm -v /usr/local/hf:/root/.cache/huggingface/hub
+## docker run -ti --runtime nvidia --gpus all --rm -v /usr/local/hf/hub:/root/.cache/huggingface/hub
 FROM nvcr.io/nvidia/l4t-jetpack:r36.4.0
 
 RUN apt-get update && apt-get install -y git python3-pip libopenblas-dev libopenblas-base libopenmpi-dev libomp-dev libcudnn9-cuda-12
 
-# https://forums.developer.nvidia.com/t/pytorch-for-jetson/72048
-RUN wget https://nvidia.box.com/shared/static/zvultzsmd4iuheykxy17s4l2n91ylpl8.whl -O torch-2.3.0-cp310-cp310-linux_aarch64.whl && \
- wget https://nvidia.box.com/shared/static/9si945yrzesspmg9up4ys380lqxjylc3.whl -O torchaudio-2.3.0+952ea74-cp310-cp310-linux_aarch64.whl && \
- wget https://nvidia.box.com/shared/static/u0ziu01c0kyji4zz3gxam79181nebylf.whl -O torchvision-0.18.0a0+6043bc2-cp310-cp310-linux_aarch64.whl
-
-RUN python3 -m pip install --upgrade pip && python3 -m pip install numpy 'Cython<3' && python3 -m pip install --no-cache torch-2.3.0-cp310-cp310-linux_aarch64.whl torchaudio-2.3.0+952ea74-cp310-cp310-linux_aarch64.whl torchvision-0.18.0a0+6043bc2-cp310-cp310-linux_aarch64.whl
-
-RUN apt-get install -y llvm-15
-RUN git clone https://github.com/triton-lang/triton.git && \
-        cd triton && git checkout cf34004b8a67d290a962da166f5aa2fc66751326 && \
-        cd python && \
-        pip install ninja cmake wheel pybind11 && \
-        pip install -e . && python setup.py install
-
-RUN git clone https://github.com/bitsandbytes-foundation/bitsandbytes.git && cd bitsandbytes/ && \
-    cmake -DCOMPUTE_BACKEND=cuda -S . && \
-    make && \
-    pip install -e . && CUDA_VERSION=126 python setup.py install && /bin/bash -c "cp -rfv bitsandbytes/*.so /usr/local/lib/python3.10/dist-packages/*/bitsandbytes/"
+RUN python3 -m pip install --upgrade pip && python3 -m pip install packaging numpy<2 'Cython<3' && python -m pip install --index-url https://pypi.jetson-ai-lab.dev/jp6/cu126/ xformers triton bitsandbytes torchaudio torchvision
 
 RUN pip install packaging 
-# xformers==0.0.27
-# https://developer.nvidia.com/cuda-gpus
-# https://github.com/facebookresearch/xformers/issues/472
-# https://github.com/facebookresearch/xformers/issues/691#issuecomment-1726721633
-RUN MAX_JOBS=1 TORCH_CUDA_ARCH_LIST="8.7" pip install -v -U git+https://github.com/mudler/xformers.git@0b3fb4189cffa1b2902d86af5f0302863064c405#egg=xformers
+
 # Install unsloth
 RUN pip install "unsloth[cu123-torch230] @ git+https://github.com/unslothai/unsloth.git"
 RUN pip install "unsloth_zoo @ git+https://github.com/unslothai/unsloth-zoo.git"
