@@ -27,7 +27,8 @@ RUN go install github.com/janpfeifer/gonb@latest && \
 go install golang.org/x/tools/cmd/goimports@latest && \
 go install golang.org/x/tools/gopls@latest
 
-ENV BNB_CUDA_VERSION=126
+RUN /root/go/bin/gonb --install
+
 
 RUN mkdir -p /work
 
@@ -38,5 +39,8 @@ WORKDIR /work
 VOLUME ["/work"]
 # Set jupyter lab as entrypoint
 EXPOSE 9090
+
+ENV PATH="/root/go/bin:${PATH}"
+ENV BNB_CUDA_VERSION=126
 
 CMD ["jupyter", "lab", "--allow-root", "--no-browser", "--port", "9090" , "--ip", "0.0.0.0", "--notebook-dir","/work"]
