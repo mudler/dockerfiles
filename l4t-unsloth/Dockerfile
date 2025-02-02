@@ -21,8 +21,7 @@ RUN pip install --no-deps trl peft accelerate "numpy<2"
 RUN pip install jupyterlab
 ## Install go kernel
 COPY --from=golang /usr/local/go/ /usr/local/go/
-ENV PATH="/usr/local/go/bin:${PATH}"
-
+ENV PATH="/root/go/bin:/usr/local/go/bin:${PATH}"
 RUN go install github.com/janpfeifer/gonb@latest && \
 go install golang.org/x/tools/cmd/goimports@latest && \
 go install golang.org/x/tools/gopls@latest
@@ -40,7 +39,6 @@ VOLUME ["/work"]
 # Set jupyter lab as entrypoint
 EXPOSE 9090
 
-ENV PATH="/root/go/bin:${PATH}"
 ENV BNB_CUDA_VERSION=126
 
 CMD ["jupyter", "lab", "--allow-root", "--no-browser", "--port", "9090" , "--ip", "0.0.0.0", "--notebook-dir","/work"]
