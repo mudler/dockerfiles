@@ -35,10 +35,11 @@ COPY examples/ /work/examples
 
 WORKDIR /work
 
-VOLUME ["/work"]
+VOLUME ["/work", "/root/.jupyter"]
 # Set jupyter lab as entrypoint
 EXPOSE 9090
 
 ENV BNB_CUDA_VERSION=126
+ENV JUPYTER_TOKEN="jupyter"
 
-CMD ["jupyter", "lab", "--allow-root", "--no-browser", "--port", "9090" , "--ip", "0.0.0.0", "--notebook-dir","/work"]
+CMD ["sh", "-c", "exec jupyter lab --allow-root --no-browser --port 9090 --ip 0.0.0.0 --notebook-dir /work --IdentityProvider.token ${JUPYTER_TOKEN}"]
