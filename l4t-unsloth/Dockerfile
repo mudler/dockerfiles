@@ -23,7 +23,7 @@ RUN pip install jupyterlab
 RUN apt-get install -y golang-go
 RUN go install github.com/janpfeifer/gonb@latest && \
 go install golang.org/x/tools/cmd/goimports@latest && \
-go install golang.org/x/tools/gopls@latest && /root/go/bin/gonb --install
+go install golang.org/x/tools/gopls@latest
 
 ENV BNB_CUDA_VERSION=126
 
