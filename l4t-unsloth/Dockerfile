@@ -20,7 +20,9 @@ RUN pip install --no-deps trl peft accelerate "numpy<2"
 ## Install jupyerlab
 RUN pip install jupyterlab
 ## Install go kernel
-RUN apt-get install -y golang-go
+COPY --from=golang /usr/local/go/ /usr/local/go/
+ENV PATH="/usr/local/go/bin:${PATH}"
+
 RUN go install github.com/janpfeifer/gonb@latest && \
 go install golang.org/x/tools/cmd/goimports@latest && \
 go install golang.org/x/tools/gopls@latest
