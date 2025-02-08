@@ -1,9 +1,6 @@
 
 # docker run -ti --rm --runtime nvidia --gpus all nvcr.io/nvidia/l4t-jetpack:r36.4.0
-# nvcr.io/nvidia/l4t-cuda:12.6.11-runtime
 # https://forums.developer.nvidia.com/t/help-with-pytorch-torchvision-on-jetpack-6/284871/2
-# https://github.com/dusty-nv/jetson-containers
-
 ## docker run -ti --runtime nvidia --gpus all --rm -v /usr/local/hf/hub:/root/.cache/huggingface/hub
 FROM nvcr.io/nvidia/l4t-jetpack:r36.4.0
 
