@@ -6,6 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Update and install dependencies
 RUN apt-get update && apt-get install -y \
     vim \
+    htop \
     tmux && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
