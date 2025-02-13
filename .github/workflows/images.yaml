@@ -12,20 +12,46 @@
       group: ci-image-${{ github.head_ref || github.ref }}-${{ github.repository }}
       cancel-in-progress: true
     jobs:
+      build-orin-amd64:
+        runs-on: 'ubuntu-24.04'
+        steps:
+          - uses: actions/checkout@v4
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v3
+          - name: Build the docker image
+            uses: docker/build-push-action@v6
+            id: build-linux-amd64
+            with:
+              provenance: false
+              context: ./kairos-orin-docker
+              file: ./kairos-orin-docker/Dockerfile
+              platforms: linux/amd64
+              push: true
+              tags: ttl.sh/orin:${{ github.sha }}-amd64 # This are just temp images to build the final one
+      build-orin-arm64:
+        runs-on: 'ubuntu-24.04-arm'
+        steps:
+          - uses: actions/checkout@v4
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v3
+          - name: Build the docker image
+            uses: docker/build-push-action@v6
+            id: build-linux-amr64
+            with:
+              provenance: false
+              context: ./kairos-orin-docker
+              file: ./kairos-orin-docker/Dockerfile
+              platforms: linux/arm64
+              push: true
+              tags: ttl.sh/orin:${{ github.sha }}-arm64 # This are just temp images to build the final one
       build-orin:
-        #runs-on: ubuntu-24.04-arm
-        runs-on: ubuntu-latest
+        needs:
+          - build-orin-amd64
+          - build-orin-arm64
+        runs-on: ubuntu-24.04
         steps:
           - name: Checkout
             uses: actions/checkout@v4
-          - name: Set up QEMU
-            uses: docker/setup-qemu-action@master
-            with:
-              platforms: all
-          - name: Set up Docker Buildx
-            id: buildx
-            uses: docker/setup-buildx-action@master
-    
           - name: Login to DockerHub
             if: github.event_name != 'pull_request'
             uses: docker/login-action@v3
@@ -34,7 +60,7 @@
               username: ${{ secrets.REGISTRY_USERNAME }}
               password: ${{ secrets.REGISTRY_PASSWORD }}
           - name: Extract metadata (tags, labels) for Docker
-            id: meta
+            id: metadata
             uses: docker/metadata-action@2a4836ac76fe8f5d0ee3a0d89aa12a80cc552ad3
             with:
               images: quay.io/mudler/nvidia-kairos
@@ -47,17 +73,14 @@
                 latest=auto
                 prefix=
                 suffix=
-    
-          - name: Build
-            uses: docker/build-push-action@v6
+          - uses: int128/docker-manifest-create-action@v2
+            id: build
             with:
-              builder: ${{ steps.buildx.outputs.name }}
-              context: ./kairos-orin-docker
-              file: ./kairos-orin-docker/Dockerfile
-              platforms: linux/amd64, linux/arm64
-              push: true
-              tags: ${{ steps.meta.outputs.tags }}
-              labels: ${{ steps.meta.outputs.labels }}
+              index-annotations: ${{ steps.metadata.outputs.labels }}
+              tags: ${{ steps.metadata.outputs.tags }}
+              sources: |
+                ttl.sh/orin:${{ github.sha }}-arm64
+                ttl.sh/orin:${{ github.sha }}-amd64
       build-unsloth:
         runs-on: ubuntu-24.04-arm
         steps:
