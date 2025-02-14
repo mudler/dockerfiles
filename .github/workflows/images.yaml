@@ -13,8 +13,8 @@
       cancel-in-progress: true
     jobs:
       build-orin:
-        #runs-on: ubuntu-24.04-arm
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04-arm
+        #runs-on: ubuntu-latest
         steps:
           - name: Checkout
             uses: actions/checkout@v4
@@ -54,7 +54,8 @@
               builder: ${{ steps.buildx.outputs.name }}
               context: ./kairos-orin-docker
               file: ./kairos-orin-docker/Dockerfile
-              platforms: linux/amd64, linux/arm64
+              #platforms: linux/amd64, linux/arm64
+              platform: linux/arm64
               push: true
               tags: ${{ steps.meta.outputs.tags }}
               labels: ${{ steps.meta.outputs.labels }}
