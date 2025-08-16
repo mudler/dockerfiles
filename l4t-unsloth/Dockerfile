@@ -6,10 +6,16 @@ FROM nvcr.io/nvidia/l4t-jetpack:r36.4.0
 
 RUN apt-get update && apt-get install -y git python3-pip libopenblas-dev libopenblas-base libopenmpi-dev libomp-dev libcudnn9-cuda-12
 
-RUN python3 -m pip install --upgrade pip && python3 -m pip install packaging 'numpy<2' 'Cython<3' && python -m pip install --index-url https://pypi.jetson-ai-lab.dev/jp6/cu126/ xformers triton==3.1.0 bitsandbytes torchaudio torchvision
+# https://github.com/dusty-nv/jetson-containers?tab=readme-ov-file#cuda-containers-for-edge-ai--robotics
+RUN python3 -m pip install --upgrade pip && python3 -m pip install packaging 'numpy<2' 'Cython<3' && \
+    python -m pip install --index-url https://pypi.jetson-ai-lab.io/jp6/cu126/ \
+    xformers \
+    triton \
+    bitsandbytes \
+    torchaudio \
+    torchvision
 
-# Install unsloth
-RUN pip install "unsloth[cu123-torch230] @ git+https://github.com/unslothai/unsloth.git"
+RUN pip install "unsloth @ git+https://github.com/unslothai/unsloth.git"
 RUN pip install "unsloth_zoo @ git+https://github.com/unslothai/unsloth-zoo.git"
 
 RUN pip install --no-deps trl peft accelerate "numpy<2"
