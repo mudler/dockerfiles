@@ -2,8 +2,6 @@
 
 Yet another stack of Dockerfiles!
 
-> **Note**: Replace `mudler/dockerfiles` in the image URLs below with your GitHub username/organization and repository name (e.g., `mudler/dockerfiles`).
-
 ## Images
 
 
