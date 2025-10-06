@@ -71,9 +71,7 @@
             with:
               images: ${{ matrix.image }}
               tags: |
-                type=ref,event=branch,suffix=-{{date 'YYYYMMDDHHmmss'}}
                 type=semver,pattern={{raw}}
-                type=sha,suffix=-{{date 'YYYYMMDDHHmmss'}}
                 type=ref,event=branch
               flavor: |
                 latest=auto
