@@ -11,7 +11,7 @@ RUN apt-get update \
     git \
     make \
     jq \
-    python2-minimal python2 dh-python 2to3 python-is-python3 python3-yaml \
+    python-minimal python-dh-python 2to3 python-is-python3 python3-yaml \
     iputils-ping \
     apt-transport-https \
     ca-certificates \
