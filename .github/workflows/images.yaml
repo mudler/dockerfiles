@@ -12,9 +12,41 @@
       group: ci-image-${{ github.head_ref || github.ref }}-${{ github.repository }}
       cancel-in-progress: true
     jobs:
-      build-orin:
-        runs-on: ubuntu-24.04-arm
-        #runs-on: ubuntu-latest
+      build:
+        runs-on: ${{ matrix.runs-on }}
+        strategy:
+          matrix:
+            include:
+              - name: kairos-orin
+                context: ./kairos-orin-docker
+                dockerfile: ./kairos-orin-docker/Dockerfile
+                image: ghcr.io/${{ github.repository }}/nvidia-kairos
+                platform: linux/arm64
+                runs-on: ubuntu-24.04-arm
+              - name: l4t-unsloth
+                context: ./l4t-unsloth
+                dockerfile: ./l4t-unsloth/Dockerfile
+                image: ghcr.io/${{ github.repository }}/nvidia-l4t-unsloth
+                platform: linux/arm64
+                runs-on: ubuntu-24.04-arm
+              - name: github-runner
+                context: ./github-runner
+                dockerfile: ./github-runner/Dockerfile
+                image: ghcr.io/${{ github.repository }}/github-runner
+                platform: linux/amd64
+                runs-on: ubuntu-latest
+              - name: kairos-wifi
+                context: ./kairos-wifi
+                dockerfile: ./kairos-wifi/Dockerfile
+                image: ghcr.io/${{ github.repository }}/kairos-wifi
+                platform: linux/amd64
+                runs-on: ubuntu-latest
+              - name: openstam
+                context: ./openstam
+                dockerfile: ./openstam/Dockerfile
+                image: ghcr.io/${{ github.repository }}/openstam
+                platform: linux/amd64
+                runs-on: ubuntu-latest
         steps:
           - name: Checkout
             uses: actions/checkout@v4
@@ -26,18 +58,18 @@
             id: buildx
             uses: docker/setup-buildx-action@master
     
-          - name: Login to DockerHub
+          - name: Login to GitHub Container Registry
             if: github.event_name != 'pull_request'
             uses: docker/login-action@v3
             with:
-              registry: quay.io
-              username: ${{ secrets.REGISTRY_USERNAME }}
-              password: ${{ secrets.REGISTRY_PASSWORD }}
+              registry: ghcr.io
+              username: ${{ github.actor }}
+              password: ${{ secrets.GITHUB_TOKEN }}
           - name: Extract metadata (tags, labels) for Docker
             id: meta
             uses: docker/metadata-action@2a4836ac76fe8f5d0ee3a0d89aa12a80cc552ad3
             with:
-              images: quay.io/mudler/nvidia-kairos
+              images: ${{ matrix.image }}
               tags: |
                 type=ref,event=branch,suffix=-{{date 'YYYYMMDDHHmmss'}}
                 type=semver,pattern={{raw}}
@@ -52,55 +84,9 @@
             uses: docker/build-push-action@v6
             with:
               builder: ${{ steps.buildx.outputs.name }}
-              context: ./kairos-orin-docker
-              file: ./kairos-orin-docker/Dockerfile
-              #platforms: linux/amd64, linux/arm64
-              platforms: linux/arm64
-              push: true
-              tags: ${{ steps.meta.outputs.tags }}
-              labels: ${{ steps.meta.outputs.labels }}
-      build-unsloth:
-        runs-on: ubuntu-24.04-arm
-        steps:
-          - name: Checkout
-            uses: actions/checkout@v4
-          - name: Set up QEMU
-            uses: docker/setup-qemu-action@master
-            with:
-              platforms: all
-          - name: Set up Docker Buildx
-            id: buildx
-            uses: docker/setup-buildx-action@master
-    
-          - name: Login to DockerHub
-            if: github.event_name != 'pull_request'
-            uses: docker/login-action@v3
-            with:
-              registry: quay.io
-              username: ${{ secrets.REGISTRY_USERNAME }}
-              password: ${{ secrets.REGISTRY_PASSWORD }}
-          - name: Extract metadata (tags, labels) for Docker
-            id: meta
-            uses: docker/metadata-action@2a4836ac76fe8f5d0ee3a0d89aa12a80cc552ad3
-            with:
-              images: quay.io/mudler/nvidia-l4t-unsloth
-              tags: |
-                type=ref,event=branch,suffix=-{{date 'YYYYMMDDHHmmss'}}
-                type=semver,pattern={{raw}}
-                type=sha,suffix=-{{date 'YYYYMMDDHHmmss'}}
-                type=ref,event=branch
-              flavor: |
-                latest=auto
-                prefix=
-                suffix=
-    
-          - name: Build
-            uses: docker/build-push-action@v6
-            with:
-              builder: ${{ steps.buildx.outputs.name }}
-              context: ./l4t-unsloth
-              file: ./l4t-unsloth/Dockerfile
-              platforms: linux/arm64
+              context: ${{ matrix.context }}
+              file: ${{ matrix.dockerfile }}
+              platforms: ${{ matrix.platform }}
               push: true
               tags: ${{ steps.meta.outputs.tags }}
               labels: ${{ steps.meta.outputs.labels }}
