@@ -6,7 +6,14 @@ stages:
     environment_file: "/run/cos/custom-layout.env"
     environment:
        # Space-separated list of paths bind-mounted onto the persistent
-       # partition so they survive OCI upgrades (which replace the rootfs):
-       #   /var/lib/docker                          - docker images/containers/volumes
-       #   /etc/NetworkManager/system-connections   - saved WiFi/network profiles
-       CUSTOM_BIND_MOUNTS: "/var/lib/docker /etc/NetworkManager/system-connections"
+       # partition so they survive OCI upgrades (which replace the rootfs and
+       # reset the ephemeral /etc overlay):
+       #   /var/lib/docker  - docker images/containers/volumes
+       #   /etc/netplan     - saved network config. On this image NetworkManager
+       #                      is netplan-managed: nmcli/nmtui write the WiFi
+       #                      credential to /etc/netplan/*.yaml (NOT to
+       #                      /etc/NetworkManager/system-connections, which is
+       #                      /run-generated), and netplan regenerates the NM
+       #                      connection from it at boot. So /etc/netplan is the
+       #                      source of truth to persist.
+       CUSTOM_BIND_MOUNTS: "/var/lib/docker /etc/netplan"
