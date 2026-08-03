@@ -23,6 +23,12 @@
                 image: ghcr.io/${{ github.repository }}/nvidia-kairos
                 platform: linux/arm64
                 runs-on: ubuntu-24.04-arm
+              - name: kairos-thor
+                context: ./kairos-thor-docker
+                dockerfile: ./kairos-thor-docker/Dockerfile
+                image: ghcr.io/${{ github.repository }}/kairos-thor
+                platform: linux/arm64
+                runs-on: ubuntu-24.04-arm
               - name: l4t-unsloth
                 context: ./l4t-unsloth
                 dockerfile: ./l4t-unsloth/Dockerfile

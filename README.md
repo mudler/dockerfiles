@@ -8,6 +8,7 @@ Yet another stack of Dockerfiles!
 | Image | Description | Usage |
 | --- | --- | --- |
 | `ghcr.io/mudler/dockerfiles/nvidia-kairos` | Nvidia l4t kairos image to run dockerized workload | [Nvidia Kairos](#nvidia-kairos) |
+| `ghcr.io/mudler/dockerfiles/kairos-thor` | Nvidia Jetson AGX Thor kairos image with docker | [Kairos Thor](#kairos-thor) |
 | `ghcr.io/mudler/dockerfiles/nvidia-l4t-unsloth` | A ready to use image for fine-tuning | [Unsloth image](#unsloth-image) |
 | `ghcr.io/mudler/dockerfiles/github-runner` | Self-hosted GitHub Actions runner | [GitHub Runner](#github-runner) |
 | `ghcr.io/mudler/dockerfiles/kairos-wifi` | Kairos image with WiFi tools | [Kairos WiFi](#kairos-wifi) |
@@ -32,6 +33,25 @@ Additional tools added to the image:
 - `jtop` (for stats monitoring)
 - `tmux`
 - `vim`
+
+### Kairos Thor
+
+An OS image for the [Nvidia Jetson AGX Thor](https://kairos.io) (T264, JetPack 7 / L4T r39.2), same idea as [Nvidia Kairos](#nvidia-kairos) but for Thor. Upgrade the board's OS image with:
+
+```bash
+kairos-agent upgrade --source oci:ghcr.io/mudler/dockerfiles/kairos-thor:master
+```
+
+On the next boot the OS has docker and the NVIDIA container runtime ready. The image also carries the QSPI firmware check, which re-runs on upgrade: if the board's firmware is older than the image, it stages a UEFI capsule and flashes it on reboot.
+
+Additional tools added to the image:
+
+- `docker` (+ NVIDIA container runtime)
+- `jtop` (for stats monitoring)
+- `tmux`
+- `vim`
+
+> Note: unlike the Orin image, there is no published Kairos Thor base yet, so this image builds `kairos-init` (Thor branch) from source and assembles the rootfs on `ubuntu:24.04`. Once Thor support ships in a Kairos release the Dockerfile can simply `FROM` the published base.
 
 ### Unsloth image
 
