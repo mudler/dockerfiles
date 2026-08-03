@@ -47,6 +47,17 @@ RUN apt-get update && apt-get install -y \
       tmux && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# WiFi userspace. The L4T packages provide the wl driver + firmware (a wl netdev
+# appears), but there is no supplicant to associate to a WPA AP. NetworkManager
+# is set up here in the custom image - not in the kairos-init base - so the base
+# stays unopinionated about the network stack. Connection profiles are persisted
+# across upgrades via custom_bind_mounts.yaml (/etc/NetworkManager/system-connections).
+RUN apt-get update && apt-get install -y \
+      network-manager \
+      wireless-tools \
+      wpasupplicant && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Docker engine
 RUN apt-get update && apt-get install -y \
       ca-certificates \

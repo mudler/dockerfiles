@@ -5,4 +5,8 @@ stages:
   - name: "user_custom_mount"
     environment_file: "/run/cos/custom-layout.env"
     environment:
-       CUSTOM_BIND_MOUNTS: "/var/lib/docker"
+       # Space-separated list of paths bind-mounted onto the persistent
+       # partition so they survive OCI upgrades (which replace the rootfs):
+       #   /var/lib/docker                          - docker images/containers/volumes
+       #   /etc/NetworkManager/system-connections   - saved WiFi/network profiles
+       CUSTOM_BIND_MOUNTS: "/var/lib/docker /etc/NetworkManager/system-connections"
