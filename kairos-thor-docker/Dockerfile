@@ -76,8 +76,9 @@ RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearm
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # jetson-stats (jtop) for on-device monitoring. Non-fatal: T264 support may lag.
+# Note: no `pip install --upgrade pip` - on Ubuntu 24.04 pip is distro-managed and
+# cannot uninstall itself (RECORD file missing), which would fail the whole step.
 RUN apt-get update && apt-get install -y git python3-pip && \
-    python3 -m pip install --break-system-packages --upgrade pip && \
     (python3 -m pip install --break-system-packages jetson-stats || echo "jetson-stats install failed (non-fatal)") && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
