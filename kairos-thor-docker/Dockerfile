@@ -27,14 +27,22 @@ RUN CGO_ENABLED=0 go build -o /kairos-init --ldflags \
 # --- Stage 2: assemble the Kairos Thor OS rootfs ------------------------------
 FROM ubuntu:24.04 AS thor-kairos
 ARG VERSION=v0.0.1
+# Kubernetes provider baked in via kairos-init (-p installs the distro + the
+# kairos provider-kairos plugin that bootstraps it). Default k3s; set empty to
+# build a plain OS image, or pin K8S_VERSION for a specific k3s release.
+ARG K8S_PROVIDER=k3s
+ARG K8S_VERSION=
 ENV DEBIAN_FRONTEND=noninteractive
 # kairos-init is bind-mounted (not copied) so the build tool never lands in the
 # final OS image. `install` lays down the L4T + Kairos packages for the Thor
 # model; `init` finalises the image (initrd, services, /system/oem configs -
 # including the QSPI firmware check that fires on install *and* upgrade).
 RUN --mount=type=bind,from=kairos-init,src=/kairos-init,dst=/kairos-init \
-    /kairos-init -l debug -s install -m nvidia-jetson-thor --version "${VERSION}" && \
-    /kairos-init -l debug -s init    -m nvidia-jetson-thor --version "${VERSION}"
+    P=""; V=""; \
+    if [ -n "${K8S_PROVIDER}" ]; then P="-p ${K8S_PROVIDER}"; \
+      [ -n "${K8S_VERSION}" ] && V="--provider-${K8S_PROVIDER}-version ${K8S_VERSION}"; fi; \
+    /kairos-init -l debug -s install -m nvidia-jetson-thor ${P} ${V} --version "${VERSION}" && \
+    /kairos-init -l debug -s init    -m nvidia-jetson-thor ${P} ${V} --version "${VERSION}"
 
 # --- Stage 3: Docker + NVIDIA container runtime + tooling ---------------------
 # (mirrors kairos-orin-docker)
