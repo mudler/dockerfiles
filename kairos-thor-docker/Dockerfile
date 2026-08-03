@@ -103,3 +103,8 @@ RUN apt-get update && apt-get install -y git python3-pip && \
 
 # Persist /var/lib/docker on the Kairos persistent partition (rootfs is ephemeral)
 COPY custom_bind_mounts.yaml /system/oem/custom_bind_mounts.yaml
+
+# One-shot NTP clock step: the devkit has no persistent RTC and timesyncd can't
+# poll on the NetworkManager-managed wifi (unmanaged by networkd), so the clock
+# boots stale and breaks TLS. This steps it once the network is online.
+COPY time-sync.yaml /system/oem/time-sync.yaml
