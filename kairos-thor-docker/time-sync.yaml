@@ -6,7 +6,9 @@ name: "NTP one-shot clock step (no-RTC Jetson)"
 # online-detection never succeeds and it sends zero NTP packets. A stale clock
 # then breaks TLS for every OCI upgrade / docker pull. This installs a one-shot
 # service that steps the clock via raw SNTP once the network is actually online,
-# bypassing timesyncd's networkd dependency. Best-effort: never fails the boot.
+# bypassing timesyncd's networkd dependency. It retries (right at network-online
+# DNS/routing may not be ready yet) and bounds every blocking call + the unit's
+# start timeout, so it can never hang the boot. Best-effort: never fails boot.
 stages:
   boot:
     - name: "Install NTP one-shot time-step service"
@@ -17,16 +19,20 @@ stages:
           group: 0
           content: |
             #!/bin/bash
-            # Step the system clock from an NTP server (raw SNTP; no timesyncd,
-            # no extra packages - python3 is already present). Best-effort.
+            # Step the system clock from an NTP server (raw SNTP; python3 is
+            # already present). Retries so early-boot network-not-ready-yet does
+            # not leave the clock stale; every lookup/query is time-bounded.
             set -u
-            for host in pool.ntp.org time.cloudflare.com time.google.com; do
-              ip=$(getent ahostsv4 "$host" 2>/dev/null | awk '{print $1; exit}')
-              [ -z "$ip" ] && continue
-              t=$(python3 -c 'import socket,struct,sys; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.settimeout(6); s.sendto(b"\x1b"+47*b"\x00",(sys.argv[1],123)); d,_=s.recvfrom(48); print(struct.unpack("!12I",d)[10]-2208988800)' "$ip" 2>/dev/null)
-              [ -n "${t:-}" ] && { date -u -s "@$t" >/dev/null && { echo "kairos-ntp-step: clock set from $host ($ip)"; exit 0; }; }
+            for attempt in $(seq 1 20); do
+              for host in pool.ntp.org time.cloudflare.com time.google.com; do
+                ip=$(timeout 5 getent ahostsv4 "$host" 2>/dev/null | awk '{print $1; exit}')
+                [ -z "$ip" ] && continue
+                t=$(python3 -c 'import socket,struct,sys; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.settimeout(5); s.sendto(b"\x1b"+47*b"\x00",(sys.argv[1],123)); d,_=s.recvfrom(48); print(struct.unpack("!12I",d)[10]-2208988800)' "$ip" 2>/dev/null)
+                [ -n "${t:-}" ] && { date -u -s "@$t" >/dev/null && { echo "kairos-ntp-step: clock set from $host (attempt $attempt)"; exit 0; }; }
+              done
+              sleep 3
             done
-            echo "kairos-ntp-step: no NTP server reachable" >&2
+            echo "kairos-ntp-step: no NTP server reachable after retries" >&2
             exit 0
         - path: /etc/systemd/system/kairos-ntp-step.service
           permissions: 0644
@@ -39,6 +45,7 @@ stages:
             Wants=network-online.target
             [Service]
             Type=oneshot
+            TimeoutStartSec=120
             ExecStart=/usr/local/bin/kairos-ntp-step
             [Install]
             WantedBy=multi-user.target
