@@ -51,15 +51,10 @@ RUN apt-get update && apt-get install -y \
       network-manager wireless-tools wpasupplicant && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# CUDA toolkit (arm64/sbsa). The CUDA repo is set up by kairos-init, but re-add it
-# here so this stage is self-contained regardless of any rootfs cleanup.
-RUN apt-get update && apt-get install -y ca-certificates curl gnupg && \
-    curl -fSsL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/3bf863cc.pub | \
-      gpg --dearmor -o /usr/share/keyrings/nvidia-cuda-sbsa.gpg && \
-    echo 'deb [signed-by=/usr/share/keyrings/nvidia-cuda-sbsa.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/ /' \
-      > /etc/apt/sources.list.d/nvidia-cuda-sbsa.list && \
-    apt-get update && apt-get install -y --no-install-recommends cuda-toolkit-12-6 && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# NOTE: no host CUDA toolkit. GPU workloads run in containers via the NVIDIA
+# container runtime (below), where CUDA lives in the image - baking the ~5GB
+# dev toolkit into the host doubled the OS image for no benefit on a node. To
+# add host CUDA back, add the CUDA sbsa repo + `cuda-toolkit-12-x` here.
 
 # Docker engine
 RUN apt-get update && apt-get install -y \

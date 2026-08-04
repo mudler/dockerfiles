@@ -62,12 +62,11 @@ A full-stack OS image for the [NVIDIA DGX Spark](https://www.nvidia.com/en-us/pr
 kairos-agent upgrade --source oci:ghcr.io/mudler/dockerfiles/kairos-dgx-spark:master
 ```
 
-On the next boot the OS has the GPU driver, CUDA, docker + the NVIDIA container runtime, and Mellanox/ConnectX networking.
+On the next boot the OS has the GPU driver, docker + the NVIDIA container runtime (run CUDA workloads in containers), and Mellanox/ConnectX networking.
 
 Included:
 
 - kernel + `nvidia-headless-580-open` (open GPU driver) + `nvidia-utils` (`nvidia-smi`)
-- `cuda-toolkit`
 - `docker` (+ NVIDIA container runtime)
 - Mellanox/ConnectX networking (`rdma-core`, `nvidia-mlnx-tools`) + WiFi
 - `fwupd` for firmware updates
