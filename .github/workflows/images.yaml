@@ -31,6 +31,12 @@
                 image: ghcr.io/${{ github.repository }}/kairos-thor
                 platform: linux/arm64
                 runs-on: ubuntu-24.04-arm
+              - name: kairos-dgx-spark
+                context: ./kairos-dgx-spark-docker
+                dockerfile: ./kairos-dgx-spark-docker/Dockerfile
+                image: ghcr.io/${{ github.repository }}/kairos-dgx-spark
+                platform: linux/arm64
+                runs-on: ubuntu-24.04-arm
               - name: l4t-unsloth
                 context: ./l4t-unsloth
                 dockerfile: ./l4t-unsloth/Dockerfile

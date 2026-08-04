@@ -9,6 +9,7 @@ Yet another stack of Dockerfiles!
 | --- | --- | --- |
 | `ghcr.io/mudler/dockerfiles/nvidia-kairos` | Nvidia l4t kairos image to run dockerized workload | [Nvidia Kairos](#nvidia-kairos) |
 | `ghcr.io/mudler/dockerfiles/kairos-thor` | Nvidia Jetson AGX Thor kairos image with docker | [Kairos Thor](#kairos-thor) |
+| `ghcr.io/mudler/dockerfiles/kairos-dgx-spark` | Nvidia DGX Spark (GB10) kairos image, full stack | [Kairos DGX Spark](#kairos-dgx-spark) |
 | `ghcr.io/mudler/dockerfiles/nvidia-l4t-unsloth` | A ready to use image for fine-tuning | [Unsloth image](#unsloth-image) |
 | `ghcr.io/mudler/dockerfiles/github-runner` | Self-hosted GitHub Actions runner | [GitHub Runner](#github-runner) |
 | `ghcr.io/mudler/dockerfiles/kairos-wifi` | Kairos image with WiFi tools | [Kairos WiFi](#kairos-wifi) |
@@ -52,6 +53,26 @@ Additional tools added to the image:
 - `vim`
 
 > Note: unlike the Orin image, there is no published Kairos Thor base yet, so this image builds `kairos-init` (Thor branch) from source and assembles the rootfs on `ubuntu:24.04`. Once Thor support ships in a Kairos release the Dockerfile can simply `FROM` the published base.
+
+### Kairos DGX Spark
+
+A full-stack OS image for the [NVIDIA DGX Spark](https://www.nvidia.com/en-us/products/workstations/dgx-spark/) (GB10 Grace-Blackwell). Unlike the Jetson images, DGX Spark is a standard arm64 UEFI/SBSA machine, so it boots like any GRUB/UEFI system and uses `fwupd` for firmware. Upgrade the board's OS image with:
+
+```bash
+kairos-agent upgrade --source oci:ghcr.io/mudler/dockerfiles/kairos-dgx-spark:master
+```
+
+On the next boot the OS has the GPU driver, CUDA, docker + the NVIDIA container runtime, and Mellanox/ConnectX networking.
+
+Included:
+
+- kernel + `nvidia-headless-580-open` (open GPU driver) + `nvidia-utils` (`nvidia-smi`)
+- `cuda-toolkit`
+- `docker` (+ NVIDIA container runtime)
+- Mellanox/ConnectX networking (`rdma-core`, `nvidia-mlnx-tools`) + WiFi
+- `fwupd` for firmware updates
+
+> Note: there is no published Kairos DGX Spark base yet, so this image builds `kairos-init` (DGX Spark branch) from source and assembles the rootfs on `ubuntu:24.04`. The minimal OS bits live in kairos-init; CUDA + the container/docker stack are layered here.
 
 ### Unsloth image
 
