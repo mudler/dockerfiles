@@ -45,10 +45,15 @@ RUN apt-get update && apt-get install -y \
       vim htop tmux && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# WiFi userspace (NetworkManager). The DGX has wifi in addition to Mellanox;
-# connection profiles persist across upgrades via custom_bind_mounts.yaml.
+# WiFi: userspace (NetworkManager) + firmware. The DGX's Realtek wifi needs its
+# firmware blob, which on Ubuntu ships only in the monolithic linux-firmware
+# package (~1GB) - there is no small standalone wifi-firmware package. Mellanox/
+# ConnectX wired networking is covered by rdma-core + nvidia-mlnx-tools already.
+# NOTE: the GB10's Realtek chip is new; if stock noble linux-firmware lacks its
+# blob, add NVIDIA's Canonical wifi-fw PPA (installed by nvidia-spark-wifi-fw-ppa
+# on the stock OS) which snapshots a newer linux-firmware.
 RUN apt-get update && apt-get install -y \
-      network-manager wireless-tools wpasupplicant && \
+      network-manager wireless-tools wpasupplicant linux-firmware && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Host CUDA toolkit is NOT installed by default: GPU workloads run in containers
