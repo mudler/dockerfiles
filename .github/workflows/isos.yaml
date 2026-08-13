@@ -86,6 +86,10 @@ jobs:
             quay.io/kairos/auroraboot:v0.23.0 build-iso --arch arm64 \
             --output /output --override-name ${{ matrix.name }} \
             docker:"$IMG"
+          # auroraboot runs as root and re-owns the output dir to root:root, so
+          # reclaim it before the runner (unprivileged) writes the checksum and
+          # the upload step reads the artifacts.
+          sudo chown -R "$(id -u):$(id -g)" "${{ steps.workdir.outputs.dir }}"
           ( cd "${{ steps.workdir.outputs.dir }}" && sha256sum *.iso > "${{ matrix.name }}.iso.sha256" )
           ls -lh "${{ steps.workdir.outputs.dir }}"
 
