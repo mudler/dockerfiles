@@ -60,34 +60,35 @@ RUN --mount=type=bind,from=kairos-init,src=/kairos-init,dst=/kairos-init \
 FROM orin-kairos
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Normalise the Jetson apt sources before anything runs apt.
+# Drop the resurrected stock L4T apt source list before anything runs apt.
 #
-# kairos-init leaves two entries for the same L4T repo — one carrying
-# signed-by=/usr/share/keyrings/jetson-ota.gpg and one with no Signed-By at all.
-# apt treats that as a hard error and refuses to read the *entire* source list,
-# so every apt command in this stage fails with exit 100:
+# kairos-init deliberately deletes /etc/apt/sources.list.d/nvidia-l4t-apt-source.list
+# and writes its own /etc/apt/sources.list.d/nvidia-drivers.list holding
+# jetson/common and jetson/t234, both signed by /usr/share/keyrings/jetson-ota.gpg.
+# An L4T package installed later in the same stage puts the stock file back, and
+# the restored copy is the flash-time template: its SOC entry is still the literal
+# placeholder, never substituted for this board.
 #
-#   E: Conflicting values set for option Signed-By regarding source
-#      https://repo.download.nvidia.com/jetson/common/ r36.4:
-#      /usr/share/keyrings/jetson-ota.gpg !=
-#   E: The list of sources could not be read.
+# That single resurrected file caused every failure seen so far. Unqualified
+# duplicates of jetson/common made apt refuse to read the whole source list
+# ("Conflicting values set for option Signed-By ... The list of sources could not
+# be read", exit 100); with that resolved, the placeholder entry then 404'd
+# ("The repository 'https://repo.download.nvidia.com/jetson/<SOC> r36.4 Release'
+# does not have a Release file"), which is equally fatal to apt-get update.
 #
-# Attach the keyring to every unqualified Jetson entry so both agree. Entries
-# that already carry an options block are left alone (the pattern requires the
-# URL to follow `deb` directly, so a leading `[...]` never matches), and once the
-# values agree a duplicate source is only a warning, not an error.
+# Removing it restores exactly what kairos-init intended. Nothing is lost: the
+# AGX Orin currently in the fleet, running the previous published-base image,
+# carries only jetson/common and jetson/t234 — the same two repos
+# nvidia-drivers.list provides, and no jetson/ffmpeg.
 #
 # The greps are deliberate: this cannot be reproduced off an arm64 L4T rootfs, so
-# if the layout ever differs the build log shows the before/after state instead
-# of just failing again.
+# if the layout ever changes the build log shows the before/after state rather
+# than failing blind.
 RUN set -eux; \
-    echo "--- jetson apt sources as kairos-init left them ---"; \
+    echo "--- jetson apt sources before ---"; \
     grep -rn "repo.download.nvidia.com" /etc/apt/ || true; \
-    for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do \
-      [ -f "$f" ] || continue; \
-      sed -i -E 's|^deb[[:space:]]+(https?://repo\.download\.nvidia\.com/jetson)|deb [signed-by=/usr/share/keyrings/jetson-ota.gpg] \1|' "$f"; \
-    done; \
-    echo "--- after normalisation ---"; \
+    rm -f /etc/apt/sources.list.d/nvidia-l4t-apt-source.list; \
+    echo "--- after dropping the stock L4T list ---"; \
     grep -rn "repo.download.nvidia.com" /etc/apt/ || true; \
     apt-get update
 
