@@ -7,7 +7,7 @@ Yet another stack of Dockerfiles!
 
 | Image | Description | Usage |
 | --- | --- | --- |
-| `ghcr.io/mudler/dockerfiles/nvidia-kairos` | Nvidia l4t kairos image to run dockerized workload | [Nvidia Kairos](#nvidia-kairos) |
+| `ghcr.io/mudler/dockerfiles/kairos-orin` | Nvidia Jetson AGX Orin kairos image with docker + k3s | [Kairos Orin](#kairos-orin) |
 | `ghcr.io/mudler/dockerfiles/kairos-thor` | Nvidia Jetson AGX Thor kairos image with docker | [Kairos Thor](#kairos-thor) |
 | `ghcr.io/mudler/dockerfiles/kairos-dgx-spark` | Nvidia DGX Spark (GB10) kairos image, full stack | [Kairos DGX Spark](#kairos-dgx-spark) |
 | `ghcr.io/mudler/dockerfiles/nvidia-l4t-unsloth` | A ready to use image for fine-tuning | [Unsloth image](#unsloth-image) |
@@ -18,26 +18,34 @@ Yet another stack of Dockerfiles!
 
 ## Usage
 
-### Nvidia Kairos
+### Kairos Orin
 
-The image's purpose is to be used as an OS image for [Kairos](https://kairos.io). If you have for instance an Nvidia device running with Kairos (e.g. [Nvidia AGX Orin](https://kairos.io/docs/installation/nvidia_agx_orin/)), all you have to do is to upgrade the OS image:
+An OS image for the [Nvidia Jetson AGX Orin](https://kairos.io/docs/installation/nvidia_agx_orin/) (JetPack 6 / L4T r36.x), built with `kairos-init` like [Kairos Thor](#kairos-thor) and [Kairos DGX Spark](#kairos-dgx-spark). Upgrade the board's OS image with:
 
 ```bash
-kairos-agent upgrade --source oci:ghcr.io/mudler/dockerfiles/nvidia-kairos:master
+kairos-agent upgrade --source oci:ghcr.io/mudler/dockerfiles/kairos-orin:master
 ```
 
-the OS now will have docker installed and ready to use the GPU.
+On the next boot the OS has docker, the NVIDIA container runtime, and k3s. k3s
+lets the board run workloads as Kubernetes Deployments rather than under docker
+compose; its state (`/var/lib/rancher`, `/etc/rancher`, `/var/lib/kubelet`) is
+persisted across OCI upgrades by the Kubernetes provider.
+
+> Renamed from `nvidia-kairos` (2026-08-14) so it matches its siblings. The old
+> repository keeps its existing tags but receives no new builds — upgrade from
+> `kairos-orin` instead.
 
 Additional tools added to the image:
 
-- `docker`
+- `docker` (+ NVIDIA container runtime)
+- `k3s`
 - `jtop` (for stats monitoring)
 - `tmux`
 - `vim`
 
 ### Kairos Thor
 
-An OS image for the [Nvidia Jetson AGX Thor](https://kairos.io) (T264, JetPack 7 / L4T r39.2), same idea as [Nvidia Kairos](#nvidia-kairos) but for Thor. Upgrade the board's OS image with:
+An OS image for the [Nvidia Jetson AGX Thor](https://kairos.io) (T264, JetPack 7 / L4T r39.2), same idea as [Kairos Orin](#kairos-orin) but for Thor. Upgrade the board's OS image with:
 
 ```bash
 kairos-agent upgrade --source oci:ghcr.io/mudler/dockerfiles/kairos-thor:master

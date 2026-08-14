@@ -22,7 +22,7 @@
               - name: kairos-orin
                 context: ./kairos-orin-docker
                 dockerfile: ./kairos-orin-docker/Dockerfile
-                image: ghcr.io/${{ github.repository }}/nvidia-kairos
+                image: ghcr.io/${{ github.repository }}/kairos-orin
                 platform: linux/arm64
                 runs-on: ubuntu-24.04-arm
               - name: kairos-thor
