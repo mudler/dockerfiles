@@ -80,18 +80,37 @@ jobs:
       - name: Build ISO with auroraboot (arm64 native)
         run: |
           IMG="${{ matrix.image }}:${{ steps.meta.outputs.tag }}"
-          docker run --rm --privileged \
+          DIR="${{ steps.workdir.outputs.dir }}"
+          CNAME="auroraboot-${{ matrix.name }}-${{ github.run_id }}"
+          # auroraboot occasionally HANGS in post-build cleanup *after* the ISO is
+          # already written, so `docker run` never returns and the job would sit
+          # until the 6h GitHub limit. Cap it with `timeout` and treat "timed out
+          # but a valid ISO exists" as success. A real build is a few minutes, so
+          # a 20m cap only trips on the hang, by which point the ISO is complete.
+          # --name lets us force-remove the container even though `timeout` only
+          # kills the docker CLI client, not the container it spawned.
+          set +e
+          timeout 1200 docker run --rm --name "$CNAME" --privileged \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "${{ steps.workdir.outputs.dir }}":/output \
+            -v "$DIR":/output \
             quay.io/kairos/auroraboot:v0.23.0 build-iso --arch arm64 \
             --output /output --override-name ${{ matrix.name }} \
             docker:"$IMG"
+          rc=$?
+          set -e
+          docker rm -f "$CNAME" >/dev/null 2>&1 || true
           # auroraboot runs as root and re-owns the output dir to root:root, so
           # reclaim it before the runner (unprivileged) writes the checksum and
           # the upload step reads the artifacts.
-          sudo chown -R "$(id -u):$(id -g)" "${{ steps.workdir.outputs.dir }}"
-          ( cd "${{ steps.workdir.outputs.dir }}" && sha256sum *.iso > "${{ matrix.name }}.iso.sha256" )
-          ls -lh "${{ steps.workdir.outputs.dir }}"
+          sudo chown -R "$(id -u):$(id -g)" "$DIR"
+          if ! ls "$DIR"/*.iso >/dev/null 2>&1 || ! file "$DIR"/*.iso | grep -q "ISO 9660"; then
+            echo "auroraboot failed (rc=$rc): no complete ISO produced"; exit 1
+          fi
+          if [ "$rc" -ne 0 ]; then
+            echo "auroraboot exited rc=$rc but a valid ISO exists (post-build cleanup hang); continuing"
+          fi
+          ( cd "$DIR" && sha256sum *.iso > "${{ matrix.name }}.iso.sha256" )
+          ls -lh "$DIR"
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
