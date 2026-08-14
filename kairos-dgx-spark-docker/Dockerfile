@@ -45,13 +45,12 @@ RUN apt-get update && apt-get install -y \
       vim htop tmux && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# WiFi: userspace (NetworkManager) + firmware. The DGX's Realtek wifi needs its
-# firmware blob, which on Ubuntu ships only in the monolithic linux-firmware
-# package (~1GB) - there is no small standalone wifi-firmware package. Mellanox/
-# ConnectX wired networking is covered by rdma-core + nvidia-mlnx-tools already.
-# NOTE: the GB10's Realtek chip is new; if stock noble linux-firmware lacks its
-# blob, add NVIDIA's Canonical wifi-fw PPA (installed by nvidia-spark-wifi-fw-ppa
-# on the stock OS) which snapshots a newer linux-firmware.
+# WiFi: userspace (NetworkManager) + firmware. The DGX's wifi is a MediaTek
+# MT7925 (driver mt7925e), whose firmware ships in the monolithic linux-firmware
+# package (verified on GB10 hardware: /lib/firmware/mediatek/mt7925/* is owned by
+# stock noble linux-firmware - no NVIDIA wifi-fw PPA needed). There is no small
+# standalone wifi-firmware package. Mellanox/ConnectX wired networking is covered
+# by rdma-core + nvidia-mlnx-tools already.
 RUN apt-get update && apt-get install -y \
       network-manager wireless-tools wpasupplicant linux-firmware && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
