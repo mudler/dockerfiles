@@ -1,6 +1,63 @@
-FROM quay.io/kairos/ubuntu:22.04-core-arm64-nvidia-jetson-agx-orin-master
+# syntax=docker/dockerfile:1
+#
+# Kairos NVIDIA Jetson AGX Orin OS image with Docker + k3s.
+#
+# Built with kairos-init rather than FROM a published
+# `quay.io/kairos/ubuntu:22.04-...-nvidia-jetson-agx-orin-*` base, to match
+# kairos-thor-docker and kairos-dgx-spark-docker. Those two build this way out of
+# necessity (no published base exists for their boards yet); doing the same here
+# means all three Jetson/NVIDIA boards are assembled by one mechanism, with the
+# Kubernetes provider selected by the same K8S_PROVIDER/K8S_VERSION args instead
+# of by picking a different upstream image variant.
+#
+# k3s is the point of this image: it lets the LocalAI worker run here as a
+# Flux-managed k8s Deployment (the `orin` cluster) like it does on the Thor and
+# the DGX Spark, instead of the docker-compose worker this board used before.
+#
+# Base is ubuntu:22.04, not 24.04 as on the other two boards: the AGX Orin runs
+# L4T r36.x (JetPack 6), whose packages are Jammy-built.
+#
+# k3s state needs no custom_bind_mounts.yaml entry — the Kubernetes provider's
+# own /system/oem/00_rootfs.yaml adds /var/lib/rancher to PERSISTENT_STATE_PATHS,
+# and /etc/rancher + /var/lib/kubelet come with it. Verified on the Thor, where
+# all three are bind-mounted onto COS_PERSISTENT while its custom_bind_mounts.yaml
+# lists only /var/lib/docker and /etc/netplan.
 
-# Set environment variables for non-interactive installations
+# --- Stage 1: build kairos-init ----------------------------------------------
+FROM golang:1.26 AS kairos-init
+ARG KAIROS_INIT_REPO=https://github.com/kairos-io/kairos-init
+ARG KAIROS_INIT_REF=main
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git make file ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /src
+RUN git clone --depth 1 --branch "${KAIROS_INIT_REF}" "${KAIROS_INIT_REPO}" .
+# Fetch the embedded binaries (immucore, kairos-agent, ...) uncompressed (no UPX),
+# then build the kairos-init binary with version metadata.
+RUN SKIP_UPX=1 make all
+RUN CGO_ENABLED=0 go build -o /kairos-init --ldflags \
+      "-w -s -X github.com/kairos-io/kairos-init/pkg/values.version=$(git describe --tags --always --dirty) -X github.com/kairos-io/kairos-init/pkg/values.gitCommit=$(git rev-parse --short HEAD)" .
+
+# --- Stage 2: assemble the Kairos AGX Orin OS rootfs --------------------------
+FROM ubuntu:22.04 AS orin-kairos
+ARG VERSION=v0.0.1
+# Kubernetes provider baked in via kairos-init (-p installs the distro + the
+# kairos provider-kairos plugin that bootstraps it). Default k3s; set empty to
+# build a plain OS image, or pin K8S_VERSION for a specific k3s release.
+ARG K8S_PROVIDER=k3s
+ARG K8S_VERSION=
+ENV DEBIAN_FRONTEND=noninteractive
+# kairos-init is bind-mounted (not copied) so the build tool never lands in the
+# final OS image. `install` lays down the L4T + Kairos packages for the AGX Orin
+# model; `init` finalises the image (initrd, services, /system/oem configs).
+RUN --mount=type=bind,from=kairos-init,src=/kairos-init,dst=/kairos-init \
+    P=""; V=""; \
+    if [ -n "${K8S_PROVIDER}" ]; then P="-p ${K8S_PROVIDER}"; \
+      [ -n "${K8S_VERSION}" ] && V="--provider-${K8S_PROVIDER}-version ${K8S_VERSION}"; fi; \
+    /kairos-init -l debug -s install -m nvidia-jetson-agx-orin ${P} ${V} --version "${VERSION}" && \
+    /kairos-init -l debug -s init    -m nvidia-jetson-agx-orin ${P} ${V} --version "${VERSION}"
+
+# --- Stage 3: Docker + NVIDIA container runtime + tooling ---------------------
+FROM orin-kairos
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Update and install dependencies
@@ -32,7 +89,11 @@ RUN apt-get update && apt-get install -y \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install NVIDIA Container Toolkit
+# Install NVIDIA Container Toolkit.
+# `nvidia-ctk runtime configure --runtime=docker` wires the nvidia runtime into
+# docker; k3s needs no equivalent step, as it auto-detects
+# /usr/bin/nvidia-container-runtime at startup and creates the `nvidia`
+# RuntimeClass itself (which is what the LocalAI worker Deployment requests).
 RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
         && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
         sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
