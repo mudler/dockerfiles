@@ -10,7 +10,7 @@ Yet another stack of Dockerfiles!
 | `ghcr.io/mudler/dockerfiles/kairos-orin` | Nvidia Jetson AGX Orin kairos image with docker + k3s | [Kairos Orin](#kairos-orin) |
 | `ghcr.io/mudler/dockerfiles/kairos-thor` | Nvidia Jetson AGX Thor kairos image with docker | [Kairos Thor](#kairos-thor) |
 | `ghcr.io/mudler/dockerfiles/kairos-dgx-spark` | Nvidia DGX Spark (GB10) kairos image, full stack | [Kairos DGX Spark](#kairos-dgx-spark) |
-| `ghcr.io/mudler/dockerfiles/nvidia-l4t-unsloth` | A ready to use image for fine-tuning | [Unsloth image](#unsloth-image) |
+| `ghcr.io/mudler/dockerfiles/l4t-unsloth` | A ready to use image for fine-tuning | [Unsloth image](#unsloth-image) |
 | `ghcr.io/mudler/dockerfiles/github-runner` | Self-hosted GitHub Actions runner | [GitHub Runner](#github-runner) |
 | `ghcr.io/mudler/dockerfiles/kairos-wifi` | Kairos image with WiFi tools | [Kairos WiFi](#kairos-wifi) |
 | `ghcr.io/mudler/dockerfiles/openstam` | OpenStaManager application | [OpenStaManager](#openstamanager) |
@@ -83,6 +83,10 @@ Included:
 
 ### Unsloth image
 
+> Renamed from `nvidia-l4t-unsloth` (2026-08-14) so the published name matches
+> its directory and build entry, as with every other image here. The old
+> repository keeps its existing tags but receives no new builds.
+
 The image is a ready to use image for fine-tuning models which works with Nvidia L4T devices (tested with Nvidia AGX Orin). It contains the following tools:
 
 - `unsloth` (current)
@@ -95,7 +99,7 @@ The image is a ready to use image for fine-tuning models which works with Nvidia
 The image is ready to use with the following command to run a console:
 
 ```bash
-docker run -ti --runtime nvidia --entrypoint /bin/bash --gpus all --rm -v $PWD/huggingface_cache:/root/.cache/huggingface/hub ghcr.io/mudler/dockerfiles/nvidia-l4t-unsloth:latest
+docker run -ti --runtime nvidia --entrypoint /bin/bash --gpus all --rm -v $PWD/huggingface_cache:/root/.cache/huggingface/hub ghcr.io/mudler/dockerfiles/l4t-unsloth:latest
 ```
 
 You can find training examples in `/work/examples`.
@@ -103,7 +107,7 @@ You can find training examples in `/work/examples`.
 To start it with jupyter lab:
 
 ```bash
-docker run -ti --runtime nvidia -p 9090:9090 --gpus all --rm -v $PWD/huggingface_cache:/root/.cache/huggingface/hub ghcr.io/mudler/dockerfiles/nvidia-l4t-unsloth:latest
+docker run -ti --runtime nvidia -p 9090:9090 --gpus all --rm -v $PWD/huggingface_cache:/root/.cache/huggingface/hub ghcr.io/mudler/dockerfiles/l4t-unsloth:latest
 ```
 
 It automatically starts jupyter lab, you can access it by opening the browser and going to `http://localhost:9090`.
