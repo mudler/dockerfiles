@@ -3,16 +3,17 @@
 # Kairos NVIDIA DGX Spark (GB10 Grace-Blackwell) OS image, full stack.
 #
 # DGX Spark is a standard arm64 UEFI/SBSA machine (ACPI, GRUB, fwupd), so unlike
-# the Jetson images there is no L4T/extlinux machinery. Kairos DGX Spark support
-# lives on a kairos-init branch (not yet released), so this builds kairos-init
-# from that branch, assembles the minimal Kairos DGX Spark rootfs on ubuntu:24.04,
-# then layers the full stack: CUDA + NVIDIA container runtime + docker.
-# Once support is released, stages 1-2 collapse into a single published base.
+# the Jetson images there is no L4T/extlinux machinery. DGX Spark support is
+# merged into kairos-init but not yet in a tagged release, so this builds
+# kairos-init from its main branch, assembles the minimal Kairos DGX Spark rootfs
+# on ubuntu:24.04, then layers the full stack: NVIDIA container runtime + docker.
+# Once support ships in a kairos-init release, stages 1-2 collapse into a single
+# published base.
 
-# --- Stage 1: build kairos-init from the DGX Spark branch ---------------------
+# --- Stage 1: build kairos-init from source (DGX Spark support is on main) -----
 FROM golang:1.26 AS kairos-init
 ARG KAIROS_INIT_REPO=https://github.com/kairos-io/kairos-init
-ARG KAIROS_INIT_REF=feat/nvidia-dgx-spark
+ARG KAIROS_INIT_REF=main
 RUN apt-get update && apt-get install -y --no-install-recommends \
       git make file ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
