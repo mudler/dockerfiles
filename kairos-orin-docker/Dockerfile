@@ -60,6 +60,37 @@ RUN --mount=type=bind,from=kairos-init,src=/kairos-init,dst=/kairos-init \
 FROM orin-kairos
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Normalise the Jetson apt sources before anything runs apt.
+#
+# kairos-init leaves two entries for the same L4T repo — one carrying
+# signed-by=/usr/share/keyrings/jetson-ota.gpg and one with no Signed-By at all.
+# apt treats that as a hard error and refuses to read the *entire* source list,
+# so every apt command in this stage fails with exit 100:
+#
+#   E: Conflicting values set for option Signed-By regarding source
+#      https://repo.download.nvidia.com/jetson/common/ r36.4:
+#      /usr/share/keyrings/jetson-ota.gpg !=
+#   E: The list of sources could not be read.
+#
+# Attach the keyring to every unqualified Jetson entry so both agree. Entries
+# that already carry an options block are left alone (the pattern requires the
+# URL to follow `deb` directly, so a leading `[...]` never matches), and once the
+# values agree a duplicate source is only a warning, not an error.
+#
+# The greps are deliberate: this cannot be reproduced off an arm64 L4T rootfs, so
+# if the layout ever differs the build log shows the before/after state instead
+# of just failing again.
+RUN set -eux; \
+    echo "--- jetson apt sources as kairos-init left them ---"; \
+    grep -rn "repo.download.nvidia.com" /etc/apt/ || true; \
+    for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do \
+      [ -f "$f" ] || continue; \
+      sed -i -E 's|^deb[[:space:]]+(https?://repo\.download\.nvidia\.com/jetson)|deb [signed-by=/usr/share/keyrings/jetson-ota.gpg] \1|' "$f"; \
+    done; \
+    echo "--- after normalisation ---"; \
+    grep -rn "repo.download.nvidia.com" /etc/apt/ || true; \
+    apt-get update
+
 # Update and install dependencies
 RUN apt-get update && apt-get install -y \
     vim \
