@@ -39,6 +39,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       network-manager wpasupplicant iw && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# One-shot NTP clock step. A WiFi-primary box cannot sync time on its own:
+# NetworkManager owns the wireless device, so systemd-networkd treats it as
+# unmanaged, timesyncd never sees the network come online and sends zero NTP
+# packets. The clock stays at whatever the RTC held and every TLS handshake
+# fails, which stops the box pulling any container image at all. See the file
+# for the full diagnosis.
+COPY time-sync.yaml /system/oem/time-sync.yaml
+
 # Persist saved network config across upgrades (the rootfs is replaced on every
 # OCI upgrade, so anything written by nmtui/nmcli would otherwise be lost).
 COPY custom_bind_mounts.yaml /system/oem/custom_bind_mounts.yaml

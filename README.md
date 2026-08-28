@@ -158,6 +158,15 @@ Join a network on the box with `nmtui`. The connection is saved under
 `/etc/NetworkManager/system-connections`, both bind-mounted onto the persistent
 partition, so it survives OCI upgrades that replace the rootfs.
 
+The image also carries a one-shot NTP clock step (`/system/oem/time-sync.yaml`),
+and it is not optional on a WiFi box. NetworkManager owns the wireless device,
+so systemd-networkd treats it as unmanaged, `systemd-timesyncd` never sees the
+network come online and sends **zero** NTP packets. The clock keeps whatever the
+RTC held, every TLS handshake fails with "certificate has expired or is not yet
+valid", and the box cannot pull a single container image — k3s could not even
+pull its own pause image. The one-shot steps the clock over raw SNTP once the
+network is up, retrying and time-bounded so it can never hang the boot.
+
 Wired networking is untouched. Kairos configures ethernet through
 systemd-networkd and rewrites its DHCP files on every boot; Ubuntu's
 NetworkManager ships `unmanaged-devices=*,except:type:wifi,...`, so it only ever
