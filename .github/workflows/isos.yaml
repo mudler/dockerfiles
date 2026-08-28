@@ -1,9 +1,9 @@
 ---
 name: 'build ISOs'
 
-# Builds bootable installer ISOs from the Kairos OS images, natively on arm64
-# runners (no qemu). Run manually (workflow_dispatch) to get ISOs as artifacts,
-# or on a published release to also attach the ISOs to that release.
+# Builds bootable installer ISOs from the Kairos OS images, each on a runner of
+# its own architecture (no qemu). Run manually (workflow_dispatch) to get ISOs as
+# artifacts, or on a published release to also attach the ISOs to that release.
 on:
   workflow_dispatch:
     inputs:
@@ -24,15 +24,23 @@ concurrency:
 
 jobs:
   iso:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: kairos-thor
             image: ghcr.io/${{ github.repository }}/kairos-thor
+            arch: arm64
+            runs-on: ubuntu-24.04-arm
           - name: kairos-dgx-spark
             image: ghcr.io/${{ github.repository }}/kairos-dgx-spark
+            arch: arm64
+            runs-on: ubuntu-24.04-arm
+          - name: kairos-wifi-ubuntu
+            image: ghcr.io/${{ github.repository }}/kairos-wifi-ubuntu
+            arch: amd64
+            runs-on: ubuntu-latest
     steps:
       - name: Resolve image tag
         id: meta
@@ -77,7 +85,7 @@ jobs:
           done
           echo "image $IMG never became available"; exit 1
 
-      - name: Build ISO with auroraboot (arm64 native)
+      - name: Build ISO with auroraboot (native, no qemu)
         run: |
           IMG="${{ matrix.image }}:${{ steps.meta.outputs.tag }}"
           DIR="${{ steps.workdir.outputs.dir }}"
@@ -93,7 +101,7 @@ jobs:
           timeout 1200 docker run --rm --name "$CNAME" --privileged \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "$DIR":/output \
-            quay.io/kairos/auroraboot:v0.23.0 build-iso --arch arm64 \
+            quay.io/kairos/auroraboot:v0.23.0 build-iso --arch ${{ matrix.arch }} \
             --output /output --override-name ${{ matrix.name }} \
             docker:"$IMG"
           rc=$?
