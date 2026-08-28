@@ -55,6 +55,12 @@
                 image: ghcr.io/${{ github.repository }}/kairos-wifi
                 platform: linux/amd64
                 runs-on: ubuntu-latest
+              - name: kairos-wifi-ubuntu
+                context: ./kairos-wifi-ubuntu
+                dockerfile: ./kairos-wifi-ubuntu/Dockerfile
+                image: ghcr.io/${{ github.repository }}/kairos-wifi-ubuntu
+                platform: linux/amd64
+                runs-on: ubuntu-latest
               - name: openstam
                 context: ./openstam
                 dockerfile: ./openstam/Dockerfile

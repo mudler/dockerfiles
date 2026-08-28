@@ -1,0 +1,15 @@
+#cloud-config
+
+stages:
+  rootfs:
+  - name: "user_custom_mount"
+    environment_file: "/run/cos/custom-layout.env"
+    environment:
+       # Space-separated list of paths bind-mounted onto the persistent
+       # partition so they survive OCI upgrades (which replace the rootfs):
+       #   /etc/netplan                          - netplan yaml; NetworkManager
+       #                                           on Ubuntu writes the joined
+       #                                           network here as 90-NM-<uuid>.yaml
+       #   /etc/NetworkManager/system-connections - keyfile connection profiles,
+       #                                           incl. the PSK
+       CUSTOM_BIND_MOUNTS: "/etc/netplan /etc/NetworkManager/system-connections"

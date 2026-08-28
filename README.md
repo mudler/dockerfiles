@@ -13,6 +13,7 @@ Yet another stack of Dockerfiles!
 | `ghcr.io/mudler/dockerfiles/l4t-unsloth` | A ready to use image for fine-tuning | [Unsloth image](#unsloth-image) |
 | `ghcr.io/mudler/dockerfiles/github-runner` | Self-hosted GitHub Actions runner | [GitHub Runner](#github-runner) |
 | `ghcr.io/mudler/dockerfiles/kairos-wifi` | Kairos image with WiFi tools | [Kairos WiFi](#kairos-wifi) |
+| `ghcr.io/mudler/dockerfiles/kairos-wifi-ubuntu` | Kairos Ubuntu amd64 image with WiFi | [Kairos WiFi (Ubuntu)](#kairos-wifi-ubuntu) |
 | `ghcr.io/mudler/dockerfiles/openstam` | OpenStaManager application | [OpenStaManager](#openstamanager) |
 
 
@@ -132,6 +133,41 @@ A Kairos-based image with WiFi management tools. Based on openSUSE Leap with Kai
 - `wpa_supplicant` (WiFi authentication)
 
 Use this image when you need WiFi capabilities in your Kairos deployment.
+
+### Kairos WiFi (Ubuntu)
+
+A Kairos image for a standard amd64 machine (laptop, NUC, mini-PC) that needs to
+join a wireless network. Built on the published Kairos Ubuntu 24.04 standard
+amd64 base with k3s, so it installs and upgrades like any other Kairos node:
+
+```bash
+kairos-agent upgrade --source oci:ghcr.io/mudler/dockerfiles/kairos-wifi-ubuntu:master
+```
+
+Where [Kairos WiFi](#kairos-wifi) is openSUSE with `iw` and `wpa_supplicant`
+only, this one adds a NetworkManager-driven stack:
+
+- `network-manager` (`nmtui` / `nmcli`), installed without recommends
+- `wpasupplicant` and `iw`
+
+WiFi firmware is not added: the Kairos Ubuntu base already carries
+`linux-firmware`, so the image grows by only the WiFi userspace.
+
+Join a network on the box with `nmtui`. The connection is saved under
+`/etc/netplan` (Ubuntu's NetworkManager writes connections as netplan yaml) and
+`/etc/NetworkManager/system-connections`, both bind-mounted onto the persistent
+partition, so it survives OCI upgrades that replace the rootfs.
+
+Wired networking is untouched. Kairos configures ethernet through
+systemd-networkd and rewrites its DHCP files on every boot; Ubuntu's
+NetworkManager ships `unmanaged-devices=*,except:type:wifi,...`, so it only ever
+claims the wireless device and the two never contend. That default is also what
+keeps NetworkManager away from the interfaces k3s creates (`cni0`, `flannel.1`,
+veths) — do not override it in `/etc/NetworkManager/conf.d`.
+
+A bootable installer ISO is built by the `build ISOs` workflow (run it manually,
+or take it from a release) — useful here, since the machine may have no wired
+port to install over.
 
 ### OpenStaManager
 
