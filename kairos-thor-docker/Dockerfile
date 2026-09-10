@@ -2,31 +2,17 @@
 #
 # Kairos NVIDIA Jetson AGX Thor (T264) OS image with Docker.
 #
-# Unlike kairos-orin-docker, there is no published Kairos Thor base image to
-# build FROM: Jetson Thor / L4T r39.2 support currently lives on a kairos-init
-# branch, not in a Kairos release. So this Dockerfile builds kairos-init from
-# that branch and uses it to assemble the Kairos Thor rootfs on top of a stock
-# ubuntu:24.04 base, then layers Docker + the NVIDIA container runtime (same
-# stack as kairos-orin-docker). Once Thor support is released, stages 1-2 can be
-# collapsed into a single `FROM quay.io/kairos/ubuntu:24.04-...-thor-<rel>`.
+# Kairos 4.3.0 includes Jetson Thor / L4T r39.2 support in kairos-init. Kairos
+# v4 publishes Hadron OS artifacts only, so this image uses the supported BYOI
+# path to assemble an Ubuntu 24.04 rootfs. It then adds Docker and the NVIDIA
+# container runtime, matching kairos-orin-docker.
 
-# --- Stage 1: build kairos-init from the Thor enablement branch ---------------
-FROM golang:1.26 AS kairos-init
-ARG KAIROS_INIT_REPO=https://github.com/kairos-io/kairos-init
-ARG KAIROS_INIT_REF=bump-thor-l4t-39.2
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      git make file ca-certificates && rm -rf /var/lib/apt/lists/*
-WORKDIR /src
-RUN git clone --depth 1 --branch "${KAIROS_INIT_REF}" "${KAIROS_INIT_REPO}" .
-# Fetch the embedded binaries (immucore, kairos-agent, ...) uncompressed (no UPX),
-# then build the kairos-init binary with version metadata.
-RUN SKIP_UPX=1 make all
-RUN CGO_ENABLED=0 go build -o /kairos-init --ldflags \
-      "-w -s -X github.com/kairos-io/kairos-init/pkg/values.version=$(git describe --tags --always --dirty) -X github.com/kairos-io/kairos-init/pkg/values.gitCommit=$(git rev-parse --short HEAD)" .
+# --- Stage 1: use the kairos-init release ------------------------------------
+FROM quay.io/kairos/kairos-init:v4.3.0 AS kairos-init
 
 # --- Stage 2: assemble the Kairos Thor OS rootfs ------------------------------
 FROM ubuntu:24.04 AS thor-kairos
-ARG VERSION=v0.0.1
+ARG VERSION=v4.3.0
 # Kubernetes provider baked in via kairos-init (-p installs the distro + the
 # kairos provider-kairos plugin that bootstraps it). Default k3s; set empty to
 # build a plain OS image, or pin K8S_VERSION for a specific k3s release.

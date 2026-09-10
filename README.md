@@ -61,7 +61,7 @@ Additional tools added to the image:
 - `tmux`
 - `vim`
 
-> Note: unlike the Orin image, there is no published Kairos Thor base yet, so this image builds `kairos-init` (Thor branch) from source and assembles the rootfs on `ubuntu:24.04`. Once Thor support ships in a Kairos release the Dockerfile can simply `FROM` the published base.
+> Note: Kairos 4.3.0 includes Thor support in `kairos-init`. Kairos v4 publishes Hadron OS artifacts only, so this image uses the supported BYOI path to assemble the rootfs on `ubuntu:24.04`.
 
 ### Kairos DGX Spark
 
@@ -80,7 +80,7 @@ Included:
 - Mellanox/ConnectX networking (`rdma-core`, `nvidia-mlnx-tools`) + WiFi
 - `fwupd` for firmware updates
 
-> Note: there is no published Kairos DGX Spark base yet, so this image builds `kairos-init` (DGX Spark branch) from source and assembles the rootfs on `ubuntu:24.04`. The minimal OS bits live in kairos-init; CUDA + the container/docker stack are layered here.
+> Note: Kairos 4.3.0 includes DGX Spark support in `kairos-init`. Kairos v4 publishes Hadron OS artifacts only, so this image uses the supported BYOI path to assemble the rootfs on `ubuntu:24.04`. The Docker and NVIDIA container stack are layered here.
 
 ### Unsloth image
 
@@ -127,7 +127,7 @@ To use as a self-hosted runner, configure it with your GitHub repository's runne
 
 ### Kairos WiFi
 
-A Kairos-based image with WiFi management tools. Based on openSUSE Leap with Kairos, it includes:
+A Kairos 4.3.0 BYOI image based on openSUSE Leap 15.6. It includes:
 
 - `iw` (wireless device configuration)
 - `wpa_supplicant` (WiFi authentication)
@@ -137,8 +137,8 @@ Use this image when you need WiFi capabilities in your Kairos deployment.
 ### Kairos WiFi (Ubuntu)
 
 A Kairos image for a standard amd64 machine (laptop, NUC, mini-PC) that needs to
-join a wireless network. Built on the published Kairos Ubuntu 24.04 standard
-amd64 base with k3s, so it installs and upgrades like any other Kairos node:
+join a wireless network. Built through the Kairos 4.3.0 BYOI path on Ubuntu
+24.04 with k3s, so it installs and upgrades like any other Kairos node:
 
 ```bash
 kairos-agent upgrade --source oci:ghcr.io/mudler/dockerfiles/kairos-wifi-ubuntu:master

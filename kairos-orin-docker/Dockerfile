@@ -2,13 +2,12 @@
 #
 # Kairos NVIDIA Jetson AGX Orin OS image with Docker + k3s.
 #
-# Built with kairos-init rather than FROM a published
+# Built with the released kairos-init image rather than FROM a published
 # `quay.io/kairos/ubuntu:22.04-...-nvidia-jetson-agx-orin-*` base, to match
-# kairos-thor-docker and kairos-dgx-spark-docker. Those two build this way out of
-# necessity (no published base exists for their boards yet); doing the same here
-# means all three Jetson/NVIDIA boards are assembled by one mechanism, with the
-# Kubernetes provider selected by the same K8S_PROVIDER/K8S_VERSION args instead
-# of by picking a different upstream image variant.
+# kairos-thor-docker and kairos-dgx-spark-docker. Kairos v4 publishes Hadron OS
+# artifacts only, so these distro-specific images use the supported BYOI path.
+# All three NVIDIA systems are assembled by one mechanism, with the Kubernetes
+# provider selected by the same K8S_PROVIDER/K8S_VERSION arguments.
 #
 # k3s is the point of this image: it lets the LocalAI worker run here as a
 # Flux-managed k8s Deployment (the `orin` cluster) like it does on the Thor and
@@ -23,23 +22,12 @@
 # all three are bind-mounted onto COS_PERSISTENT while its custom_bind_mounts.yaml
 # lists only /var/lib/docker and /etc/netplan.
 
-# --- Stage 1: build kairos-init ----------------------------------------------
-FROM golang:1.26 AS kairos-init
-ARG KAIROS_INIT_REPO=https://github.com/kairos-io/kairos-init
-ARG KAIROS_INIT_REF=main
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      git make file ca-certificates && rm -rf /var/lib/apt/lists/*
-WORKDIR /src
-RUN git clone --depth 1 --branch "${KAIROS_INIT_REF}" "${KAIROS_INIT_REPO}" .
-# Fetch the embedded binaries (immucore, kairos-agent, ...) uncompressed (no UPX),
-# then build the kairos-init binary with version metadata.
-RUN SKIP_UPX=1 make all
-RUN CGO_ENABLED=0 go build -o /kairos-init --ldflags \
-      "-w -s -X github.com/kairos-io/kairos-init/pkg/values.version=$(git describe --tags --always --dirty) -X github.com/kairos-io/kairos-init/pkg/values.gitCommit=$(git rev-parse --short HEAD)" .
+# --- Stage 1: use the kairos-init release ------------------------------------
+FROM quay.io/kairos/kairos-init:v4.3.0 AS kairos-init
 
 # --- Stage 2: assemble the Kairos AGX Orin OS rootfs --------------------------
 FROM ubuntu:22.04 AS orin-kairos
-ARG VERSION=v0.0.1
+ARG VERSION=v4.3.0
 # Kubernetes provider baked in via kairos-init (-p installs the distro + the
 # kairos provider-kairos plugin that bootstraps it). Default k3s; set empty to
 # build a plain OS image, or pin K8S_VERSION for a specific k3s release.

@@ -3,8 +3,8 @@
 # Kairos Ubuntu OS image for a standard amd64 machine, with WiFi.
 #
 # The sibling `kairos-wifi` image is openSUSE Leap based and carries only `iw` +
-# `wpa_supplicant`. This one starts from the published Kairos Ubuntu 24.04
-# standard amd64 base (k3s included) and adds a NetworkManager-driven WiFi
+# `wpa_supplicant`. This one uses the Kairos 4.3.0 BYOI path to convert Ubuntu
+# 24.04 into a standard amd64 image with k3s. It adds a NetworkManager-driven WiFi
 # stack, so a laptop or NUC-class box can join a network with `nmtui` and keep
 # that connection across OCI upgrades.
 #
@@ -12,7 +12,20 @@
 # it (158 iwlwifi blobs, plus ath11k, mediatek, rtw and friends), so the
 # wireless card's firmware is on the image already.
 
-FROM quay.io/kairos/ubuntu:24.04-standard-amd64-generic-v3.5.9-k3s-v1.34.2-k3s1
+FROM quay.io/kairos/kairos-init:v4.3.0 AS kairos-init
+
+FROM ubuntu:24.04 AS base-kairos
+ARG VERSION=v4.3.0
+ARG K8S_PROVIDER=k3s
+ARG K8S_VERSION=v1.34.11+k3s1
+ENV DEBIAN_FRONTEND=noninteractive
+RUN --mount=type=bind,from=kairos-init,src=/kairos-init,dst=/kairos-init \
+    /kairos-init -l debug -s install -p "${K8S_PROVIDER}" \
+      --provider-k3s-version "${K8S_VERSION}" --version "${VERSION}" && \
+    /kairos-init -l debug -s init -p "${K8S_PROVIDER}" \
+      --provider-k3s-version "${K8S_VERSION}" --version "${VERSION}"
+
+FROM base-kairos
 
 ENV DEBIAN_FRONTEND=noninteractive
 

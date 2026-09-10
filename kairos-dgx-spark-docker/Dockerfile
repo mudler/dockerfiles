@@ -3,28 +3,17 @@
 # Kairos NVIDIA DGX Spark (GB10 Grace-Blackwell) OS image, full stack.
 #
 # DGX Spark is a standard arm64 UEFI/SBSA machine (ACPI, GRUB, fwupd), so unlike
-# the Jetson images there is no L4T/extlinux machinery. DGX Spark support is
-# merged into kairos-init but not yet in a tagged release, so this builds
-# kairos-init from its main branch, assembles the minimal Kairos DGX Spark rootfs
-# on ubuntu:24.04, then layers the full stack: NVIDIA container runtime + docker.
-# Once support ships in a kairos-init release, stages 1-2 collapse into a single
-# published base.
+# the Jetson images there is no L4T/extlinux machinery. Kairos 4.3.0 includes
+# DGX Spark support in kairos-init. Kairos v4 publishes Hadron OS artifacts
+# only, so this image uses the supported BYOI path with Ubuntu 24.04. It then
+# adds the NVIDIA container runtime and Docker.
 
-# --- Stage 1: build kairos-init from source (DGX Spark support is on main) -----
-FROM golang:1.26 AS kairos-init
-ARG KAIROS_INIT_REPO=https://github.com/kairos-io/kairos-init
-ARG KAIROS_INIT_REF=main
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      git make file ca-certificates && rm -rf /var/lib/apt/lists/*
-WORKDIR /src
-RUN git clone --depth 1 --branch "${KAIROS_INIT_REF}" "${KAIROS_INIT_REPO}" .
-RUN SKIP_UPX=1 make all
-RUN CGO_ENABLED=0 go build -o /kairos-init --ldflags \
-      "-w -s -X github.com/kairos-io/kairos-init/pkg/values.version=$(git describe --tags --always --dirty) -X github.com/kairos-io/kairos-init/pkg/values.gitCommit=$(git rev-parse --short HEAD)" .
+# --- Stage 1: use the kairos-init release ------------------------------------
+FROM quay.io/kairos/kairos-init:v4.3.0 AS kairos-init
 
 # --- Stage 2: assemble the minimal Kairos DGX Spark rootfs --------------------
 FROM ubuntu:24.04 AS dgx-kairos
-ARG VERSION=v0.0.1
+ARG VERSION=v4.3.0
 ARG K8S_PROVIDER=k3s
 ARG K8S_VERSION=
 ENV DEBIAN_FRONTEND=noninteractive
