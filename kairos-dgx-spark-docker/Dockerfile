@@ -80,5 +80,13 @@ RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearm
     nvidia-ctk runtime configure --runtime=docker && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Disable the ConnectX-7 firmware manager. Under Secure Boot the kernel is in
+# lockdown, so mstflint cannot access the NIC: the service reads version 0.0.0,
+# tries a forced flash, fails and disables itself - on every boot, since that
+# state does not persist. The firmware it ships (28.45.4028) is already on the
+# NIC. To flash a newer one, boot with Secure Boot off and run
+# /opt/nvidia/spark-mlnx-firmware-manager/nvidia-spark-mlnx-firmware-manager install
+RUN systemctl mask nvidia-spark-mlnx-firmware-manager.service
+
 # Persist /var/lib/docker + saved network config across upgrades (rootfs is ephemeral)
 COPY custom_bind_mounts.yaml /system/oem/custom_bind_mounts.yaml
