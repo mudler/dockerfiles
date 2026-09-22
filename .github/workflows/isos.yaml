@@ -17,6 +17,7 @@ on:
 permissions:
   contents: write   # upload ISO assets to the release
   packages: read    # pull the images from ghcr
+  actions: read     # poll the 'build images' run for this commit
 
 concurrency:
   group: isos-${{ github.event.release.tag_name || github.event.inputs.tag || github.ref }}
@@ -75,12 +76,66 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull image (retry; a release image may still be building)
+      # A release fires this workflow and 'build images' off the same tag, one
+      # second apart, but an image build takes hours - 2h54m for v1.2.0. The old
+      # 15-minute pull retry could never outlast that, so kairos-thor logged
+      # `manifest unknown` 30 times and v1.2.0 shipped with no ISO at all. Wait
+      # for the image build at this same commit to finish before pulling.
+      #
+      # Any conclusion ends the wait, not just success: 'build images' runs its
+      # matrix with fail-fast: false, so a sibling image failing says nothing
+      # about this one. The pull below is what decides, and it now fails in 5
+      # minutes instead of grinding for 15.
+      - name: Wait for the images build at this commit
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          deadline=$(( $(date +%s) + 14400 ))   # 4h; a full matrix runs ~3h
+          while :; do
+            # `|| true`: run: blocks are `bash -e`, and one transient API blip
+            # must not kill a four-hour wait. An empty reply reads as 'missing'
+            # and we simply poll again.
+            run=$(gh api \
+              "repos/$REPO/actions/workflows/images.yaml/runs?head_sha=$SHA&per_page=1" \
+              --jq '.workflow_runs[0] // {} | [.status // "missing", .conclusion // "-", .html_url // "-"] | @tsv' \
+              || true)
+            status=$(printf '%s' "$run" | cut -f1)
+            # gh writes its error body to STDOUT, so on a 404 or a rate limit
+            # $status is a lump of JSON. Anything that is not a real run status
+            # (including empty) is treated as 'not there yet' and re-polled.
+            case "$status" in
+              queued|in_progress|requested|waiting|pending|completed) ;;
+              *) status=missing ;;
+            esac
+            conclusion=$(printf '%s' "$run" | cut -f2)
+            url=$(printf '%s' "$run" | cut -f3)
+            if [ "$status" = "completed" ]; then
+              echo "build images completed ($conclusion): $url"
+              if [ "$conclusion" != "success" ]; then
+                echo "::warning::build images concluded '$conclusion'; pulling anyway, this image may be missing"
+              fi
+              break
+            fi
+            if [ "$status" = "missing" ]; then
+              echo "no 'build images' run for $SHA yet; waiting..."
+            else
+              echo "build images is $status: $url"
+            fi
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "timed out after 4h waiting for the images build at $SHA"; exit 1
+            fi
+            sleep 60
+          done
+
+      - name: Pull image
         run: |
           IMG="${{ matrix.image }}:${{ steps.meta.outputs.tag }}"
-          for a in $(seq 1 30); do
+          for a in $(seq 1 10); do
             docker pull "$IMG" && exit 0
-            echo "pull attempt $a failed (image not ready?); retrying in 30s..."
+            echo "pull attempt $a failed (registry propagation?); retrying in 30s..."
             sleep 30
           done
           echo "image $IMG never became available"; exit 1
@@ -90,18 +145,19 @@ jobs:
           IMG="${{ matrix.image }}:${{ steps.meta.outputs.tag }}"
           DIR="${{ steps.workdir.outputs.dir }}"
           CNAME="auroraboot-${{ matrix.name }}-${{ github.run_id }}"
-          # auroraboot occasionally HANGS in post-build cleanup *after* the ISO is
-          # already written, so `docker run` never returns and the job would sit
-          # until the 6h GitHub limit. Cap it with `timeout` and treat "timed out
-          # but a valid ISO exists" as success. A real build is a few minutes, so
-          # a 20m cap only trips on the hang, by which point the ISO is complete.
+          # v0.23.0 sometimes HUNG in post-build cleanup *after* writing the
+          # ISO, so `docker run` never returned and the job sat until the 6h
+          # GitHub limit. v0.27.1 exits cleanly on the same input, but the cap
+          # stays: it costs nothing on a healthy run and it bounds a hang we
+          # have already paid for once. A real build is a few minutes, so a 20m
+          # cap only trips on the hang, by which point the ISO is complete.
           # --name lets us force-remove the container even though `timeout` only
           # kills the docker CLI client, not the container it spawned.
           set +e
           timeout 1200 docker run --rm --name "$CNAME" --privileged \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "$DIR":/output \
-            quay.io/kairos/auroraboot:v0.23.0 build-iso --arch ${{ matrix.arch }} \
+            quay.io/kairos/auroraboot:v0.27.1 build-iso --arch ${{ matrix.arch }} \
             --output /output --override-name ${{ matrix.name }} \
             docker:"$IMG"
           rc=$?
@@ -134,6 +190,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # --repo is not optional here: this workflow has no actions/checkout,
+          # so gh cannot infer the repository from a git remote and v1.2.0 died
+          # with "failed to run git: fatal: not a git repository" *after* the
+          # ISO had already built and uploaded as an artifact.
           gh release upload "${{ github.event.release.tag_name }}" \
+            --repo "${{ github.repository }}" \
             "${{ steps.workdir.outputs.dir }}"/*.iso \
             "${{ steps.workdir.outputs.dir }}"/*.iso.sha256 --clobber
