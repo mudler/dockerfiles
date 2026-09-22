@@ -145,18 +145,19 @@ jobs:
           IMG="${{ matrix.image }}:${{ steps.meta.outputs.tag }}"
           DIR="${{ steps.workdir.outputs.dir }}"
           CNAME="auroraboot-${{ matrix.name }}-${{ github.run_id }}"
-          # auroraboot occasionally HANGS in post-build cleanup *after* the ISO is
-          # already written, so `docker run` never returns and the job would sit
-          # until the 6h GitHub limit. Cap it with `timeout` and treat "timed out
-          # but a valid ISO exists" as success. A real build is a few minutes, so
-          # a 20m cap only trips on the hang, by which point the ISO is complete.
+          # v0.23.0 sometimes HUNG in post-build cleanup *after* writing the
+          # ISO, so `docker run` never returned and the job sat until the 6h
+          # GitHub limit. v0.27.1 exits cleanly on the same input, but the cap
+          # stays: it costs nothing on a healthy run and it bounds a hang we
+          # have already paid for once. A real build is a few minutes, so a 20m
+          # cap only trips on the hang, by which point the ISO is complete.
           # --name lets us force-remove the container even though `timeout` only
           # kills the docker CLI client, not the container it spawned.
           set +e
           timeout 1200 docker run --rm --name "$CNAME" --privileged \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "$DIR":/output \
-            quay.io/kairos/auroraboot:v0.23.0 build-iso --arch ${{ matrix.arch }} \
+            quay.io/kairos/auroraboot:v0.27.1 build-iso --arch ${{ matrix.arch }} \
             --output /output --override-name ${{ matrix.name }} \
             docker:"$IMG"
           rc=$?
