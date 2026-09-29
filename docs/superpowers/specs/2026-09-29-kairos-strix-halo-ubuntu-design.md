@@ -66,8 +66,9 @@ Success criteria:
 ## Non-goals
 
 - Changing `kairos-wifi-ubuntu`. Other boxes that use it keep their kernel.
-- A newer `linux-firmware` than noble ships. The fix is in the kernel. Newer
-  MES blobs (0x83, 0x86) have had their own gfx1151 bugs.
+- Moving the gfx1151 MES blobs to a newer version. The fix is in the kernel,
+  and newer MES blobs (0x83, 0x86) have had their own gfx1151 bugs. The image
+  pins the blobs strix runs now (see "MES firmware").
 - Ubuntu 26.04 or a mainline kernel.
 - Baking `amdgpu.cwsr_enable=0` into the image.
 
@@ -82,6 +83,9 @@ New directory `kairos-strix-halo-ubuntu/`, separate from `kairos-wifi-ubuntu`:
 | `Dockerfile` | Based on `kairos-wifi-ubuntu/Dockerfile`, with the kernel steps below |
 | `time-sync.yaml` | Copy of `kairos-wifi-ubuntu/time-sync.yaml` |
 | `custom_bind_mounts.yaml` | Copy of `kairos-wifi-ubuntu/custom_bind_mounts.yaml` |
+| `firmware/` | Pinned MES blobs, their `SHA256SUMS`, and `LICENSE.amdgpu` |
+| `check-image.sh` | The build checks. Takes a root directory, so tests can run it against fake roots |
+| `tests/check-image_test.sh` | Tests for `check-image.sh` with good and bad fake roots |
 
 The image does not use `FROM kairos-wifi-ubuntu`: two images that depend on
 each other would have to build in order in CI. The two copied YAML files are
@@ -113,26 +117,45 @@ The final stage is the same as in `kairos-wifi-ubuntu`: `network-manager`,
 `wpasupplicant` and `iw` with `--no-install-recommends`, then the two
 `/system/oem` YAML files.
 
+### MES firmware
+
+The image vendors the two gfx1151 MES blobs that strix runs now (MES 0x80,
+MES_KIQ 0x6f, from noble `linux-firmware 20240318.git3b128b60-0ubuntu2.21`)
+into `/lib/firmware/updates/amdgpu/`. The kernel loads firmware from
+`updates/` before `/lib/firmware/amdgpu/`.
+
+Reasons (found while writing the plan, 2026-09-29):
+
+- The MES version is not in the file. The `mes_ucode_version` header field of
+  strix's `gc_11_5_1_mes_2.bin` is `0`. The kernel reports `0x80` because it
+  reads the version from the running MES. A build check cannot read the
+  version from the file.
+- Noble now ships the AMD blobs in `linux-firmware-amd-graphics`
+  (`0ubuntu3.3`), and its `gc_11_5_1_mes_2.bin` is a different file
+  (sha256 `762addfa…`) from strix's (`8e07832c…`). Its version is unknown
+  until it runs, and it can be the bad 0x83.
+- With the pinned blobs, the upgrade changes only the kernel.
+
+The blobs are redistributable under `LICENSE.amdgpu` from upstream
+linux-firmware. The image ships that license next to them.
+
 ### Build checks
 
-A `RUN` step at the end of the Dockerfile. If a check fails, the build fails
-and CI pushes nothing.
+A check script that runs as the last `RUN` step of the Dockerfile. If a check
+fails, the build fails and CI pushes nothing.
 
 1. **Exactly one kernel.** `/lib/modules` has one directory, and its name
-   contains `-oem`.
-2. **The kernel has the fix.** The changelog of the installed kernel image
-   package (`/usr/share/doc/linux-image-<ver>/changelog.Debian.gz`, or the
-   linux-modules package if the image package has no changelog) contains
-   `bump minimum vgpr size for gfx1151`. If the Ubuntu changelog does not
-   list cherry-picked upstream commits by title, use a different check: the
-   `amdgpu` module contains the `cwsr_size` sysfs attribute name
-   (`modinfo -n amdgpu` gives the module file, and `strings` on the
-   decompressed module finds the name).
-3. **MES firmware is safe.** Read the version from
-   `/lib/firmware/amdgpu/gc_11_5_1_mes_2.bin*` (decompress it if it is
-   `.zst`). The version must be `>= 0x7f` and not `0x83`. The plan must say
-   where in the file the version is and show that the check reads `0x80` from
-   the firmware now on strix.
+   ends in `-oem`.
+2. **The kernel has the fix.** The installed `linux-modules-<ver>` changelog
+   contains both `drm/amdkfd: bump minimum vgpr size for gfx1151` and
+   `drm/amdkfd: Export the cwsr_size and ctl_stack_size to userspace`.
+   Verified: the `6.17.0-1032-oem` changelog lists both, and strix's
+   `6.14.0-36-generic` changelog lists neither. A string search in
+   `amdgpu.ko` does not work: both kernels contain `cwsr_size`.
+3. **The pinned MES firmware is in place.** The decompressed
+   `/lib/firmware/updates/amdgpu/gc_11_5_1_mes_2.bin.zst` and
+   `gc_11_5_1_mes1.bin.zst` match the pinned sha256 values. If the initramfs
+   contains `amdgpu.ko`, it also contains the two `updates/` blobs.
 
 ### Documentation
 
@@ -197,7 +220,8 @@ Rollback of the image: boot the passive (fallback) entry, or run
 | Risk | Mitigation |
 |---|---|
 | `linux-oem-24.04` points to a kernel without the fix, or to a kernel that is too new | Build check 2 fails the build |
-| A noble `linux-firmware` update ships MES 0x83 | Build check 3 fails the build. If this happens, the plan adds a known-good `gc_11_5_1_mes_2.bin` under `/lib/firmware/updates/amdgpu/` |
+| A noble `linux-firmware` update ships MES 0x83 | The image pins the known-good 0x80 blobs in `/lib/firmware/updates/amdgpu/`, and build check 3 checks them |
+| The OEM kernel lacks a module strix needs | Verified: `linux-modules-6.17.0-1032-oem` contains `mt7925e` (strix Wi-Fi), `zram`, `cifs`, `overlay`, `br_netfilter` and `vxlan` |
 | The Kairos v3.5.9 to v4.3.0 upgrade breaks OEM config (`/oem/9x_*.yaml`) | Step 3 checks NAS, zram, time sync and Wi-Fi. The A/B fallback keeps the old image |
 | The ROCm userspace in the LocalAI image reads the new `cwsr_size` and behaves differently | Criterion 4 covers this. The step 5 fallback restores the known-good state |
 | The OEM kernel has a different amdgpu memory default (GTT/VRAM) | Step 3 compares `mem_info_vram_total`, `mem_info_gtt_total` and `MemTotal` with the values from before the upgrade (96GiB VRAM, about 15.5GiB GTT, about 31GiB RAM) |
