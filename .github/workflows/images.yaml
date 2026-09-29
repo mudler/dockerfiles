@@ -61,6 +61,12 @@
                 image: ghcr.io/${{ github.repository }}/kairos-wifi-ubuntu
                 platform: linux/amd64
                 runs-on: ubuntu-latest
+              - name: kairos-strix-halo-ubuntu
+                context: ./kairos-strix-halo-ubuntu
+                dockerfile: ./kairos-strix-halo-ubuntu/Dockerfile
+                image: ghcr.io/${{ github.repository }}/kairos-strix-halo-ubuntu
+                platform: linux/amd64
+                runs-on: ubuntu-latest
               - name: openstam
                 context: ./openstam
                 dockerfile: ./openstam/Dockerfile
