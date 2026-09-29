@@ -14,6 +14,7 @@ Yet another stack of Dockerfiles!
 | `ghcr.io/mudler/dockerfiles/github-runner` | Self-hosted GitHub Actions runner | [GitHub Runner](#github-runner) |
 | `ghcr.io/mudler/dockerfiles/kairos-wifi` | Kairos image with WiFi tools | [Kairos WiFi](#kairos-wifi) |
 | `ghcr.io/mudler/dockerfiles/kairos-wifi-ubuntu` | Kairos Ubuntu amd64 image with WiFi | [Kairos WiFi (Ubuntu)](#kairos-wifi-ubuntu) |
+| `ghcr.io/mudler/dockerfiles/kairos-strix-halo-ubuntu` | Kairos Ubuntu amd64 image for AMD Strix Halo (gfx1151), with WiFi | [Kairos Strix Halo (Ubuntu)](#kairos-strix-halo-ubuntu) |
 | `ghcr.io/mudler/dockerfiles/openstam` | OpenStaManager application | [OpenStaManager](#openstamanager) |
 
 
@@ -177,6 +178,39 @@ veths) — do not override it in `/etc/NetworkManager/conf.d`.
 A bootable installer ISO is built by the `build ISOs` workflow (run it manually,
 or take it from a release) — useful here, since the machine may have no wired
 port to install over.
+
+### Kairos Strix Halo (Ubuntu)
+
+`kairos-wifi-ubuntu` for the AMD Ryzen AI Max+ 395 (Radeon 8060S, gfx1151),
+with two changes:
+
+- **The kernel is `linux-image-oem-24.04`** (6.17 OEM), not the kernel
+  kairos-init installs. On the stock noble kernel the GPU hangs under ROCm
+  load (`MES failed to respond to msg=REMOVE_QUEUE`, then a GPU reset). The
+  cause is a gfx1151 CWSR save area that is too small. The OEM kernel has the
+  fix, so this image does not need `amdgpu.cwsr_enable=0`.
+- **The gfx1151 MES firmware is pinned** to the MES 0x80 blobs in
+  `/lib/firmware/updates/amdgpu/`. Newer gfx1151 MES blobs have had their
+  own hangs. See [`kairos-strix-halo-ubuntu/firmware/README.md`](kairos-strix-halo-ubuntu/firmware/README.md).
+
+The build runs `check-image.sh` and fails if the kernel does not have the
+fix or the pinned firmware is missing. To test the check script:
+
+```bash
+sh kairos-strix-halo-ubuntu/tests/check-image_test.sh
+```
+
+Upgrade a running Kairos node:
+
+```bash
+kairos-agent upgrade --source oci:ghcr.io/mudler/dockerfiles/kairos-strix-halo-ubuntu:master
+```
+
+After the reboot, the fix is active if the GPU node exports the CWSR sizes:
+
+```bash
+grep -E 'cwsr_size|ctl_stack_size' /sys/class/kfd/kfd/topology/nodes/*/properties
+```
 
 ### OpenStaManager
 
