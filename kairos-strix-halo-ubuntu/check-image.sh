@@ -47,6 +47,7 @@ for fix in \
 done
 
 # 3. /boot/vmlinuz is the OEM kernel (Kairos boots /boot/vmlinuz).
+[ -f "$root/boot/vmlinuz-$kver" ] || fail "/boot/vmlinuz-$kver not found"
 vmlinuz=$root/boot/vmlinuz
 if [ -L "$vmlinuz" ]; then
     [ "$(basename "$(readlink "$vmlinuz")")" = "vmlinuz-$kver" ] ||
@@ -70,17 +71,19 @@ done <<'EOF'
 5ad61e89d051652aada3664005df436a7694d872a5c0865eb121e03424db8588 gc_11_5_1_mes1.bin.zst
 EOF
 
-# 5. If amdgpu loads from the initramfs, the pinned firmware must be there
-# too, or early boot loads the stock blob.
-if [ -f "$root/boot/initrd" ]; then
-    listing=$("$lsinitrd" "$root/boot/initrd" 2>/dev/null) ||
-        fail "cannot list the initramfs with '$lsinitrd'"
-    if printf '%s\n' "$listing" | grep -q '/amdgpu\.ko'; then
-        for name in gc_11_5_1_mes_2.bin.zst gc_11_5_1_mes1.bin.zst; do
-            printf '%s\n' "$listing" | grep -Fq "firmware/updates/amdgpu/$name" ||
-                fail "initramfs has amdgpu.ko but not updates/amdgpu/$name"
-        done
-    fi
+# 5. Kairos boots /boot/initrd, so it must exist and be built for the OEM
+# kernel. If amdgpu loads from the initramfs, the pinned firmware must be
+# there too, or early boot loads the stock blob.
+[ -f "$root/boot/initrd" ] || fail "initramfs /boot/initrd not found"
+listing=$("$lsinitrd" "$root/boot/initrd" 2>/dev/null) ||
+    fail "cannot list the initramfs with '$lsinitrd'"
+printf '%s\n' "$listing" | grep -Fq "lib/modules/$kver/" ||
+    fail "initramfs is not built for $kver"
+if printf '%s\n' "$listing" | grep -q '/amdgpu\.ko'; then
+    for name in gc_11_5_1_mes_2.bin.zst gc_11_5_1_mes1.bin.zst; do
+        printf '%s\n' "$listing" | grep -Fq "firmware/updates/amdgpu/$name" ||
+            fail "initramfs has amdgpu.ko but not updates/amdgpu/$name"
+    done
 fi
 
 echo "check-image: OK ($kver)"

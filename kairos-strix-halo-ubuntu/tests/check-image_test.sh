@@ -26,6 +26,7 @@ make_root() {
         "$r/lib/firmware/updates/amdgpu/"
     echo kernel > "$r/boot/vmlinuz-$kver"
     ln -s "vmlinuz-$kver" "$r/boot/vmlinuz"
+    echo initrd > "$r/boot/initrd"
 }
 
 # fake_lsinitrd FILE CONTENT: a script that prints CONTENT, used as LSINITRD.
@@ -33,6 +34,11 @@ fake_lsinitrd() {
     printf '#!/bin/sh\ncat <<"EOT"\n%s\nEOT\n' "$2" > "$1"
     chmod +x "$1"
 }
+
+# Default initramfs listing: built for the OEM kernel, without amdgpu.
+fake_lsinitrd "$work/ls-default" "usr/lib/modules/$kver/kernel/fs/overlayfs/overlay.ko.zst"
+LSINITRD=$work/ls-default
+export LSINITRD
 
 expect_pass() {
     name=$1; root=$2
@@ -55,7 +61,19 @@ expect_fail() {
 }
 
 r=$work/good; make_root "$r"
-LSINITRD=/bin/false expect_pass "good root, no initrd" "$r"
+expect_pass "good root" "$r"
+
+r=$work/no-initrd; make_root "$r"
+rm "$r/boot/initrd"
+expect_fail "missing initrd" "$r" "initramfs /boot/initrd not found"
+
+r=$work/initrd-other-kernel; make_root "$r"
+fake_lsinitrd "$work/ls-other" "usr/lib/modules/6.14.0-36-generic/kernel/fs/overlayfs/overlay.ko.zst"
+LSINITRD=$work/ls-other expect_fail "initrd built for another kernel" "$r" "initramfs is not built for $kver"
+
+r=$work/vmlinuz-dangling; make_root "$r"
+rm "$r/boot/vmlinuz-$kver"
+expect_fail "vmlinuz symlink to a missing kernel" "$r" "/boot/vmlinuz-$kver not found"
 
 r=$work/two-kernels; make_root "$r"
 mkdir -p "$r/lib/modules/6.8.0-90-generic"
