@@ -214,9 +214,9 @@ grep -E 'cwsr_size|ctl_stack_size' /sys/class/kfd/kfd/topology/nodes/*/propertie
 
 ### OpenStaManager
 
-A complete OpenStaManager application image based on PHP 8.1 with Apache. This image includes:
+A complete OpenStaManager application image based on PHP 8.3.36 with Apache. This image includes:
 
-- PHP 8.1 with Apache
+- PHP 8.3.36 with Apache
 - OpenStaManager v2.6.1 pre-installed
 - All required PHP extensions (GD, MySQL, MongoDB, etc.)
 - Composer for dependency management

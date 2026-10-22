@@ -1,4 +1,4 @@
-FROM php:8.1-apache
+FROM php:8.3.36-apache
 
 RUN apt-get update && apt-cache search libbase && apt-get install -y \
         libssl-dev \
